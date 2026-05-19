@@ -1,0 +1,103 @@
+/* ─── Kazuki Console — Shared Base Styles ─── */
+/* Dark :root vars kept for backward compat; overridden by [data-theme="light"] in theme-light.css */
+
+:root {
+  --glass-radius: 14px;
+  --glass-radius-sm: 10px;
+  --glass-radius-lg: 20px;
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body {
+  font-family: 'Inter', -apple-system, sans-serif;
+  min-height: 100vh;
+}
+
+/* ── Animation keyframes (shared across themes) ── */
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.4; }
+}
+
+@keyframes wave-pulse {
+  0%, 100% { box-shadow: 0 0 0 4px rgba(124,58,237,0.15); }
+  50%      { box-shadow: 0 0 0 7px rgba(124,58,237,0.32); }
+}
+
+@keyframes human-decision-pulse {
+  0%, 100% {
+    transform: scale(1);
+    box-shadow: 0 0 0 3px rgba(255,159,10,0.14), 0 0 0 rgba(255,159,10,0);
+  }
+  50% {
+    transform: scale(1.08);
+    box-shadow: 0 0 0 7px rgba(255,159,10,0.28), 0 0 18px rgba(255,159,10,0.36);
+  }
+}
+
+@keyframes fno-pop {
+  0%   { opacity: 0; transform: translate(-50%, -45%) scale(0.85); }
+  60%  { opacity: 1; transform: translate(-50%, -50%) scale(1.04); }
+  100% { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+}
+
+@keyframes shimmer {
+  0% { opacity: 0.3; }
+  50% { opacity: 0.7; }
+  100% { opacity: 0.3; }
+}
+
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+/* ── Interaction polish ── */
+
+[data-testid^="nav-"] {
+  border-radius: var(--glass-radius-sm) !important;
+  transition: all 0.2s ease !important;
+}
+[data-testid^="nav-"]:hover {
+  background: rgba(0,0,0,0.04) !important;
+}
+
+[data-testid="btn-retry"],
+[data-testid="btn-cancel"],
+[data-testid="btn-submit-create"],
+[data-testid^="compose-"] {
+  border-radius: var(--glass-radius-sm) !important;
+  transition: transform 0.15s ease !important;
+}
+[data-testid="btn-retry"]:active,
+[data-testid="btn-cancel"]:active,
+[data-testid="btn-submit-create"]:active,
+[data-testid^="compose-"]:active {
+  transform: scale(0.96);
+}
+
+[data-testid="view-graph"],
+[data-testid="view-list"] {
+  border-radius: var(--glass-radius-sm) !important;
+}
+
+[data-testid^="theme-"] {
+  transition: transform 0.15s ease !important;
+}
+[data-testid^="theme-"]:hover {
+  transform: scale(1.15);
+}
+
+/* ── Task node hover ── */
+.task-node:hover,
+[data-testid="task-node"]:hover {
+  transform: translateY(-2px) !important;
+  box-shadow: 0 10px 36px rgba(0,0,0,0.08), inset 0 1px 0 rgba(255,255,255,0.90) !important;
+}
+
+/* ── Scrollbar (light-friendly) ── */
+::-webkit-scrollbar { width: 6px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: rgba(0,0,0,0.12); border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: rgba(0,0,0,0.20); }

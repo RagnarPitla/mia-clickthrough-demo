@@ -1,0 +1,167 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>SCM Implementation Tracker</title>
+  <script>
+    (() => {
+      const param = new URLSearchParams(window.location.search).get("clawpilotTheme");
+      const theme =
+        param || (window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light");
+      document.documentElement.setAttribute("data-theme", theme);
+    })();
+  </script>
+  <link rel="stylesheet" href="/SCM/_scm.css">
+</head>
+<body>
+  <div class="bg-mesh"></div>
+  <div class="dashboard-shell">
+    <header class="app-header glass">
+      <div class="header-left">
+        <span class="ms-logo" aria-label="Microsoft">
+          <svg width="22" height="22" viewBox="0 0 21 21" aria-hidden="true">
+            <rect width="10" height="10" fill="#f25022"></rect>
+            <rect x="11" width="10" height="10" fill="#7fba00"></rect>
+            <rect y="11" width="10" height="10" fill="#00a4ef"></rect>
+            <rect x="11" y="11" width="10" height="10" fill="#ffb900"></rect>
+          </svg>
+        </span>
+        <div>
+          <div class="app-title">Implementation Tracker</div>
+          <div class="app-subtitle">Tasks · d365perflab.crm.dynamics.com</div>
+        </div>
+      </div>
+      <div class="header-right">
+        <span class="header-badge">ft_tasks</span>
+    <a class="pill primary" href="/SCM?from=mia&task=warehouse&assigned=decision">Back to Project Mia</a>
+        <div class="avatar">GR</div>
+      </div>
+    </header>
+
+    <main class="dashboard-layout">
+      <section class="dashboard-card">
+        <div class="plan-title">
+          <div>
+            <h2>Warehouse cutover tasks</h2>
+            <p class="muted">Handoff mode animates each Dataverse task from NEW to RUNNING to COMPLETE.</p>
+          </div>
+          <span class="badge">ft_tasks</span>
+        </div>
+
+        <table>
+          <thead>
+            <tr>
+              <th>Task ID</th>
+              <th>Name</th>
+              <th>Layer</th>
+              <th>Entity</th>
+              <th>Owner</th>
+              <th>Status</th>
+            </tr>
+          </thead>
+          <tbody id="taskRows"></tbody>
+        </table>
+
+        <div id="completion" class="completion">
+          <h2>All 7 warehouse tasks complete - ATL-01 is live.</h2>
+          <p>PATCH ft_tasks(ATL-01).ft_status = Complete, audit recorded in ft_auditLog.</p>
+          <a class="pill primary" href="/SCM?completed=cutover">Continue in Project Mia</a>
+        </div>
+      </section>
+
+      <aside class="dashboard-card">
+        <h2>ft_agentconversations</h2>
+        <p class="muted">Audit trail entries are prepended as each task completes.</p>
+        <div id="auditRows" class="audit-list"></div>
+      </aside>
+    </main>
+    </div>
+
+  <script>
+    (function () {
+      var STORAGE_KEY = "scm-cowork-state";
+      var shouldRun = new URLSearchParams(window.location.search).get("run") === "cutover";
+      var rows = [
+        ["t-w01", "Create Warehouse ATL-01 (site US-SE)", "W01", "InventWarehouse", "ConfigExecutorAgent", "ConfigExecutorAgent posted /data/InventWarehouses -> 201 Created (ATL-01)"],
+        ["t-w02", "Define Zones, RCV, BULK, PICK, SHIP", "W02", "WHSZone", "ConfigExecutorAgent", "ConfigExecutorAgent posted /data/WHSZones x 4 -> 201 Created"],
+        ["t-w03", "Generate 480 Locations from footprint", "W02", "WHSLocation", "LocationGridGenerator", "LocationGridGenerator emitted 480 bin records -> bulk POST WHSLocations -> 201 Created"],
+        ["t-w04", "Apply Location Profiles (Floor/Rack/Bin)", "W03", "WHSLocationProfile", "ConfigExecutorAgent", "ConfigExecutorAgent posted /data/WHSLocationProfiles -> 201 Created (3 profiles)"],
+        ["t-w05", "Set default Receiving + Shipping docks", "W03", "InventWarehouseDocks", "ConfigExecutorAgent", "ConfigExecutorAgent posted /data/InventWarehouseDocks x 2 -> 201 Created"],
+        ["t-w06", "License plate scope decision (PICK/SHIP)", "W03", "WHSParameters", "ClarificationAgent", "ClarificationAgent captured user decision, License plate on PICK/SHIP only"],
+        ["t-w07", "Activate warehouse ATL-01 (go-live)", "W03", "InventWarehouseStatus", "ConfigExecutorAgent", "ConfigExecutorAgent posted /data/InventWarehouseStatus -> 201 Created, ATL-01 set to Active"]
+      ];
+      var statuses = rows.map(function () { return shouldRun ? "NEW" : "COMPLETE"; });
+      var taskRows = document.getElementById("taskRows");
+      var auditRows = document.getElementById("auditRows");
+      var completion = document.getElementById("completion");
+
+      render();
+      if (shouldRun) runAnimation();
+      else completion.classList.add("visible");
+
+      function render() {
+        taskRows.innerHTML = "";
+        rows.forEach(function (row, index) {
+          var tr = document.createElement("tr");
+          var status = statuses[index].toLowerCase();
+          tr.innerHTML =
+            "<td>" + row[0] + "</td>" +
+            "<td>" + row[1] + "</td>" +
+            "<td>" + row[2] + "</td>" +
+            "<td>" + row[3] + "</td>" +
+            "<td>" + row[4] + "</td>" +
+            '<td><span class="status-pill ' + status + '">' + statuses[index] + "</span></td>";
+          taskRows.appendChild(tr);
+        });
+      }
+
+      function runAnimation() {
+        rows.forEach(function (row, index) {
+          setTimeout(function () {
+            statuses[index] = "RUNNING";
+            render();
+          }, 400 + index * 950);
+
+          setTimeout(function () {
+            statuses[index] = "COMPLETE";
+            prependAudit(row[5]);
+            render();
+            if (index === rows.length - 1) finish();
+          }, 1050 + index * 950);
+        });
+      }
+
+      function prependAudit(text) {
+        var div = document.createElement("div");
+        div.className = "audit-row";
+        div.innerHTML = '<span class="state done">&check;</span><span>' + text + "</span>";
+        auditRows.prepend(div);
+      }
+
+      function finish() {
+        setTimeout(function () {
+          prependAudit("PATCH ft_tasks(ATL-01).ft_status = Complete, audit recorded in ft_auditLog");
+          completion.classList.add("visible");
+          persistCompletion();
+          setTimeout(function () {
+            window.location.href = "/SCM?completed=cutover";
+          }, 5000);
+        }, 650);
+      }
+
+      function persistCompletion() {
+        try {
+          var state = JSON.parse(localStorage.getItem(STORAGE_KEY) || "{}");
+          state.completed = true;
+          state.warehouseHandoff = state.warehouseHandoff || {};
+          state.warehouseHandoff.cutoverStatus = "COMPLETE";
+          localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+        } catch (error) {
+          console.warn("Could not persist SCM dashboard state", error);
+        }
+      }
+    })();
+  </script>
+</body>
+</html>

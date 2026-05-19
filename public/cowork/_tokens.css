@@ -1,0 +1,73 @@
+/* Shared design tokens for the FastTrack/Microsoft Agentic demos.
+   <link>-able from any sibling demo (demo-website, CLI-Cowork) so the
+   brand values stay locked. Components may diverge; tokens may not. */
+
+:root {
+  /* High-contrast light palette (WCAG AAA for body text) */
+  --bg: #fafaf7;              /* warm off-white */
+  --bg-accent: #f4f2ec;       /* slightly warmer for sections */
+  --surface: #ffffff;
+  --surface-soft: #f8fafc;
+  --border: #d9d6cf;          /* warm neutral, visible rule */
+  --border-strong: #9ca3af;
+  --text: #0b0f17;            /* 19.5:1 against #fff */
+  --text-muted: #3f4756;      /* 9.6:1 on #fff */
+  --text-soft: #5b6472;       /* 6.4:1 on #fff, AA+ */
+  --accent: #1d4ed8;          /* blue-700, 7.2:1 on white */
+  --accent-hover: #1e40af;
+  --accent-soft: #dbeafe;
+  --accent-bg: #eff6ff;
+  --ink: #111827;
+
+  /* Dark surface (terminal / code panels) */
+  --term-bg: #0d1117;
+  --term-bg-soft: #161b22;
+  --term-border: #1f2a37;
+  --term-text: #e6edf3;
+  --term-accent: #58a6ff;
+
+  /* Status palette */
+  --status-new-bg: #dbeafe;       --status-new-fg: #1d4ed8;       --status-new-bd: #bfdbfe;
+  --status-prog-bg: #fef3c7;      --status-prog-fg: #a16207;      --status-prog-bd: #fde68a;
+  --status-done-bg: #dcfce7;      --status-done-fg: #15803d;      --status-done-bd: #bbf7d0;
+  --status-blocked-bg: #fee2e2;   --status-blocked-fg: #b91c1c;   --status-blocked-bd: #fecaca;
+  --status-failed-bg: #fecaca;    --status-failed-fg: #7f1d1d;    --status-failed-bd: #f87171;
+  --status-deferred-bg: #f1f5f9;  --status-deferred-fg: #475569;  --status-deferred-bd: #e2e8f0;
+
+  /* Cowork — Microsoft Fluent / Power Apps palette
+     White surfaces with Microsoft Cowork purple accent (matches Power Apps brand) */
+  --cw-bg: #fafaf9;               /* very subtle warm white */
+  --cw-bg-grid: #f0f0ee;          /* faint grid */
+  --cw-surface: #ffffff;          /* cards are pure white */
+  --cw-surface-hover: #f3f2f1;    /* Fluent neutral 20 */
+  --cw-border: #e1dfdd;           /* Fluent neutral 30 */
+  --cw-border-strong: #c8c6c4;    /* Fluent neutral 40 */
+  --cw-text: #242424;             /* Fluent neutral 100 */
+  --cw-text-muted: #424242;       /* Fluent neutral 90 */
+  --cw-text-soft: #6e6e6e;        /* Fluent neutral 70 */
+  --cw-accent: #6c2bd9;           /* Microsoft Cowork purple */
+  --cw-accent-hover: #5520b0;
+  --cw-accent-soft: #ede4ff;
+  --cw-accent-grad-1: #a78bfa;    /* gradient-light */
+  --cw-accent-grad-2: #5b21b6;    /* gradient-dark */
+  --cw-dot: #6c2bd9;
+}
+
+/* Base type stack — overrideable per page if needed */
+body {
+  font-family: "Geist", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  font-feature-settings: "ss01", "cv11";
+  -webkit-font-smoothing: antialiased;
+  letter-spacing: -0.005em;
+}
+.display {
+  font-family: "Instrument Serif", Georgia, serif;
+  font-weight: 400;
+  letter-spacing: -0.02em;
+}
+.mono { font-family: "JetBrains Mono", "SF Mono", "Fira Code", "Courier New", monospace; }
+.text-primary { color: var(--text); }
+.text-muted   { color: var(--text-muted); }
+.text-soft    { color: var(--text-soft); }

@@ -1,0 +1,395 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<title>Implementation Tracker — Power Apps</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Geist:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/cowork/_tokens.css">
+<style>
+  /* Power Apps / Dataverse-styled audit view */
+  body {
+    margin: 0;
+    background: #faf9f8;          /* Fluent neutral 10 */
+    color: #242424;               /* Fluent neutral 100 */
+    font-family: "Segoe UI", -apple-system, BlinkMacSystemFont, "Geist", sans-serif;
+  }
+  .ribbon {
+    background: linear-gradient(180deg, #742774 0%, #5c1f5c 100%);
+    color: white;
+    padding: 8px 18px;
+    display: flex; align-items: center; gap: 14px;
+    font-size: 13px;
+  }
+  .ribbon .pa-logo {
+    width: 26px; height: 26px;
+    background: white;
+    border-radius: 4px;
+    display: inline-flex; align-items: center; justify-content: center;
+    padding: 3px;
+  }
+  .ribbon .pa-logo img { width: 100%; height: 100%; object-fit: contain; display: block; }
+  .ribbon .app-name { font-weight: 600; }
+  .ribbon .env-pill {
+    margin-left: auto;
+    background: rgba(255,255,255,0.15);
+    border: 1px solid rgba(255,255,255,0.3);
+    border-radius: 4px;
+    padding: 3px 10px;
+    font-size: 12px;
+    font-family: "JetBrains Mono", monospace;
+  }
+  .ribbon .back-pill {
+    background: rgba(255,255,255,0.18);
+    color: white;
+    border: 1px solid rgba(255,255,255,0.35);
+    border-radius: 999px;
+    padding: 4px 12px;
+    font-size: 12px;
+    text-decoration: none;
+    cursor: pointer;
+  }
+  .ribbon .back-pill:hover { background: rgba(255,255,255,0.28); }
+
+  .toolbar {
+    background: white;
+    border-bottom: 1px solid #e1dfdd;
+    padding: 12px 18px;
+    display: flex; align-items: center; gap: 14px;
+    font-size: 13px;
+  }
+  .toolbar h1 {
+    font-size: 18px; font-weight: 600; margin: 0;
+    color: #242424;
+  }
+  .toolbar .filter {
+    display: flex; align-items: center; gap: 6px;
+    padding: 5px 10px;
+    border: 1px solid #d2d0ce;
+    border-radius: 4px;
+    color: #424242;
+    background: white;
+    cursor: pointer;
+  }
+  .toolbar .spacer { flex: 1; }
+  .toolbar .new-view {
+    background: #742774; color: white;
+    border: none; border-radius: 4px;
+    padding: 6px 14px; font-size: 13px;
+    cursor: pointer;
+  }
+
+  .layout { display: grid; grid-template-columns: 1fr 380px; height: calc(100vh - 38px - 49px); }
+  .grid-wrap { background: white; overflow-y: auto; }
+
+  table.dv {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 13px;
+  }
+  table.dv thead th {
+    text-align: left;
+    background: #f3f2f1;
+    color: #424242;
+    font-weight: 600;
+    padding: 9px 12px;
+    border-bottom: 1px solid #e1dfdd;
+    border-right: 1px solid #edebe9;
+    position: sticky; top: 0;
+    font-size: 12.5px;
+  }
+  table.dv tbody td {
+    padding: 9px 12px;
+    border-bottom: 1px solid #edebe9;
+    border-right: 1px solid #f3f2f1;
+    color: #242424;
+  }
+  table.dv tbody tr:hover { background: #f3f2f1; }
+  .badge {
+    display: inline-block;
+    padding: 2px 8px;
+    border-radius: 3px;
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.02em;
+  }
+  .b-new      { background: #deecf9; color: #004578; }
+  .b-prog     { background: #fff4ce; color: #8a6500; }
+  .b-done     { background: #dff6dd; color: #107c10; }
+  .b-blocked  { background: #fde7e9; color: #a4262c; }
+  .b-pend     { background: #fff4ce; color: #8a6500; }
+
+  .layer {
+    display: inline-block;
+    padding: 1px 5px;
+    border-radius: 2px;
+    font-size: 10px;
+    font-weight: 700;
+    background: #ede9fe; color: #6d28d9;
+    font-family: "JetBrains Mono", monospace;
+  }
+  .layer.l02 { background: #e0e7ff; color: #4338ca; }
+  .layer.l03 { background: #dbeafe; color: #1d4ed8; }
+  .layer.l04 { background: #e2e8f0; color: #334155; }
+  .layer.w01 { background: #ede9fe; color: #6d28d9; }
+  .layer.w02 { background: #dbeafe; color: #1d4ed8; }
+  .layer.w03 { background: #d1fae5; color: #047857; }
+
+  /* Right rail — audit log */
+  .audit {
+    background: #fbfaf9;
+    border-left: 1px solid #e1dfdd;
+    overflow-y: auto;
+    padding: 14px 16px;
+  }
+  .audit h2 {
+    margin: 0 0 12px;
+    font-size: 14px; font-weight: 600;
+    color: #242424;
+    display: flex; align-items: center; gap: 8px;
+  }
+  .audit h2 .dot { width: 8px; height: 8px; border-radius: 999px; background: #107c10; animation: pulse 2s infinite; }
+  @keyframes pulse {
+    0%, 100% { box-shadow: 0 0 0 0 rgba(16,124,16,0.3); }
+    50% { box-shadow: 0 0 0 6px rgba(16,124,16,0); }
+  }
+  .entry {
+    padding: 10px 12px;
+    background: white;
+    border: 1px solid #edebe9;
+    border-radius: 4px;
+    margin-bottom: 8px;
+    font-size: 12.5px;
+  }
+  .entry .who { font-weight: 600; color: #242424; }
+  .entry .who.user { color: #0078d4; }
+  .entry .who.agent { color: #742774; }
+  .entry .what { color: #424242; margin-top: 2px; }
+  .entry .ts { font-size: 11px; color: #757575; font-family: "JetBrains Mono", monospace; margin-top: 4px; }
+
+  .empty { padding: 40px 20px; text-align: center; color: #605e5c; font-size: 13px; }
+
+  .footer-bar {
+    border-top: 1px solid #e1dfdd;
+    padding: 8px 18px;
+    background: white;
+    display: flex; align-items: center; justify-content: space-between;
+    font-size: 12px;
+    color: #605e5c;
+  }
+</style>
+</head>
+<body>
+
+<div class="ribbon">
+  <div class="pa-logo"><img src="/cowork/dynamics365_256x256.png" alt="Dynamics 365" /></div>
+  <span class="app-name">Implementation Tracker</span>
+  <span style="opacity: 0.7;">|</span>
+  <span>Tasks</span>
+  <a href="/cowork" class="back-pill">← Back to Project Mia</a>
+  <span class="env-pill">d365perflab.crm.dynamics.com</span>
+</div>
+
+<div class="toolbar">
+  <h1>Active tasks</h1>
+  <button class="filter">⚙ All</button>
+  <button class="filter">🔍 Filter</button>
+  <button class="filter">👤 Owner: any</button>
+  <button class="filter">⚡ Status: any</button>
+  <div class="spacer"></div>
+  <button class="new-view">+ New</button>
+</div>
+
+<div class="layout">
+  <div class="grid-wrap">
+    <table class="dv" id="task-table">
+      <thead>
+        <tr>
+          <th>ft_taskid</th>
+          <th>ft_name</th>
+          <th>ft_layer</th>
+          <th>ft_entity</th>
+          <th>ft_statuscode</th>
+          <th>ft_assignedto</th>
+          <th>modifiedon</th>
+        </tr>
+      </thead>
+      <tbody id="task-tbody"></tbody>
+    </table>
+  </div>
+
+  <aside class="audit">
+    <h2><span class="dot"></span>Audit log <span style="margin-left:auto; font-size:11px; color:#605e5c; font-family: 'JetBrains Mono', monospace;">ft_agentconversations</span></h2>
+    <div id="audit-list"></div>
+  </aside>
+</div>
+
+<div class="footer-bar">
+  <span>1 - <span id="row-count">12</span> of <span id="row-total">12</span> &middot; sorted by ft_layer</span>
+  <span style="font-family: 'JetBrains Mono', monospace;">Power Apps · v9.2.0.0</span>
+</div>
+
+<script>
+  // Pull live state if Cowork persisted it; otherwise show baseline rows
+  function loadState() {
+    try { return JSON.parse(localStorage.getItem("cowork-state") || "null"); }
+    catch (e) { return null; }
+  }
+  const cached = loadState();
+
+  // Detect handoff mode — when arriving from Cowork via ?run=cutover,
+  // animate every task NEW → RUNNING → COMPLETE then auto-return.
+  const handoffMode = new URLSearchParams(location.search).get("run") === "cutover";
+
+  const TASKS = [
+    { id:"t-w01", name:"Create Warehouse ATL-01 (site US-SE)",    layer:"W01", entity:"InventWarehouse",      who:"ConfigExecutorAgent",   audit:"ConfigExecutorAgent posted /data/InventWarehouses → 201 Created (ATL-01)" },
+    { id:"t-w02", name:"Define Zones — RCV, BULK, PICK, SHIP",    layer:"W02", entity:"WHSZone",              who:"ConfigExecutorAgent",   audit:"ConfigExecutorAgent posted /data/WHSZones × 4 → 201 Created" },
+    { id:"t-w03", name:"Generate 480 Locations from footprint",   layer:"W02", entity:"WHSLocation",          who:"LocationGridGenerator", audit:"LocationGridGenerator emitted 480 bin records → bulk POST WHSLocations → 201 Created" },
+    { id:"t-w04", name:"Apply Location Profiles (Floor/Rack/Bin)", layer:"W03", entity:"WHSLocationProfile",   who:"ConfigExecutorAgent",   audit:"ConfigExecutorAgent posted /data/WHSLocationProfiles → 201 Created (3 profiles)" },
+    { id:"t-w05", name:"Set default Receiving + Shipping docks",  layer:"W03", entity:"InventWarehouseDocks", who:"ConfigExecutorAgent",   audit:"ConfigExecutorAgent posted /data/InventWarehouseDocks × 2 → 201 Created" },
+    { id:"t-w06", name:"License plate scope decision (PICK/SHIP)", layer:"W03", entity:"WHSParameters",        who:"ClarificationAgent",    audit:"ClarificationAgent captured user decision · License plate on PICK/SHIP only" },
+    { id:"t-w07", name:"Activate warehouse ATL-01 (go-live)",     layer:"W03", entity:"InventWarehouseStatus", who:"ConfigExecutorAgent",  audit:"ConfigExecutorAgent posted /data/InventWarehouseStatus → 201 Created · ATL-01 set to Active" },
+  ];
+
+  // In handoff mode, all tasks start NEW. Otherwise (direct visit), all COMPLETE.
+  TASKS.forEach(t => {
+    t.status = handoffMode ? "NEW"      : "COMPLETE";
+    t.sb     = handoffMode ? "b-new"    : "b-done";
+    t.mod    = handoffMode ? "—"        : "just now";
+    if (!handoffMode) t.audit = null;
+  });
+
+  const tbody = document.getElementById("task-tbody");
+  TASKS.forEach(t => {
+    const tr = document.createElement("tr");
+    tr.id = "row-" + t.id;
+    tr.innerHTML = `
+      <td><span style="font-family: 'JetBrains Mono', monospace; color: #0078d4;">${t.id}</span></td>
+      <td>${t.name}</td>
+      <td><span class="layer ${t.layer.toLowerCase()}">${t.layer}</span></td>
+      <td style="font-family: 'JetBrains Mono', monospace; font-size: 12px;">${t.entity}</td>
+      <td><span class="badge ${t.sb}" id="badge-${t.id}">${t.status}</span></td>
+      <td id="who-${t.id}">${handoffMode ? "—" : t.who}</td>
+      <td style="font-family: 'JetBrains Mono', monospace; font-size: 12px;" id="mod-${t.id}">${t.mod}</td>`;
+    tbody.appendChild(tr);
+  });
+  document.getElementById("row-count").textContent = TASKS.length;
+  document.getElementById("row-total").textContent = TASKS.length;
+
+  // Audit log
+  const auditList = document.getElementById("audit-list");
+  function fmtTs(ts) {
+    if (!ts) return "—";
+    const d = new Date(ts);
+    return d.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", second: "2-digit" });
+  }
+  function pushAudit(action) {
+    const div = document.createElement("div");
+    div.className = "entry";
+    div.style.background = "#f3eeff";
+    div.innerHTML = `
+      <div class="who agent">🤖 Agent</div>
+      <div class="what">${action}</div>
+      <div class="ts">${fmtTs(Date.now())}</div>`;
+    auditList.insertBefore(div, auditList.firstChild);
+  }
+
+  function setBadge(taskId, status, sb) {
+    const b = document.getElementById("badge-" + taskId);
+    if (b) { b.textContent = status; b.className = "badge " + sb; }
+    const row = document.getElementById("row-" + taskId);
+    if (row) {
+      row.style.background = sb === "b-prog" ? "#fff5d6" : sb === "b-done" ? "#f0f9f0" : "";
+      row.style.transition = "background 0.3s ease";
+    }
+    document.getElementById("mod-" + taskId).textContent = sb === "b-new" ? "—" : fmtTs(Date.now());
+    document.getElementById("who-" + taskId).textContent = sb === "b-new" ? "—" : TASKS.find(t => t.id === taskId)?.who || "";
+  }
+
+  if (handoffMode) {
+    // Animate each task NEW → RUNNING → COMPLETE in sequence
+    let cursor = 400;
+    TASKS.forEach((t, i) => {
+      setTimeout(() => setBadge(t.id, "RUNNING", "b-prog"), cursor);
+      setTimeout(() => {
+        setBadge(t.id, "COMPLETE", "b-done");
+        if (t.audit) pushAudit(t.audit);
+      }, cursor + 900);
+      cursor += 1300;
+    });
+
+    // Build the return banner
+    const banner = document.createElement("div");
+    banner.id = "return-banner";
+    banner.style.cssText = "position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:#1f1f22;color:#fff;padding:14px 20px;border-radius:14px;box-shadow:0 12px 40px rgba(0,0,0,0.25);display:none;align-items:center;gap:14px;font-family:'Segoe UI',system-ui,sans-serif;font-size:14px;z-index:50;";
+    banner.innerHTML = `
+      <span>✓ All 7 warehouse tasks complete — ATL-01 is live.</span>
+      <a href="/cowork?completed=cutover" style="background:#7c5cff;color:#fff;text-decoration:none;padding:8px 16px;border-radius:999px;font-weight:500;">Continue in Project Mia →</a>
+      <span id="auto-return" style="font-size:12px;color:#a1a1aa;">Returning in <b id="auto-return-s">5</b>s…</span>`;
+    document.body.appendChild(banner);
+
+    // Show banner + final audit entry after the last task completes
+    setTimeout(() => {
+      pushAudit("PATCH ft_tasks(ATL-01).ft_status = Complete · audit recorded in ft_auditLog");
+      banner.style.display = "inline-flex";
+      // Auto-return countdown
+      let s = 5;
+      const tick = setInterval(() => {
+        s -= 1;
+        const lbl = document.getElementById("auto-return-s");
+        if (lbl) lbl.textContent = s;
+        if (s <= 0) {
+          clearInterval(tick);
+          location.href = "/cowork?completed=cutover";
+        }
+      }, 1000);
+    }, cursor + 200);
+  } else {
+    // Static visit (no handoff): seed a few baseline audit entries
+    [
+      "FootprintParser parsed ATL-warehouse-footprint.xlsx (480 bins · 4 zones · 12 aisles)",
+      "Posted plan card with 5 OData payloads (W01–W03) for DC-Atlanta",
+      "ConfigExecutorAgent posted /data/InventWarehouses → 201 Created (ATL-01)",
+      "ConfigExecutorAgent posted /data/WHSZones × 4 → 201 Created",
+      "LocationGridGenerator emitted 480 bin records → bulk POST WHSLocations",
+      "ConfigExecutorAgent posted /data/InventWarehouseDocks × 2 → 201 Created",
+      "PATCH ft_tasks(ATL-01).ft_status = Complete · audit recorded in ft_auditLog",
+    ].forEach(action => pushAudit(action));
+  }
+</script>
+
+<!-- Mia bridge: back-link + decision-complete handshake with the Mia Console -->
+<script>
+(function () {
+  var MIA_FLAG = 'mia-license-plate-decision';
+  // Reaching the Dataverse dashboard means the agent posted the plan, which is
+  // the natural "decision complete" beat for the Mia awaiting-user task.
+  try { localStorage.setItem(MIA_FLAG, 'complete'); } catch (e) { /* ignore */ }
+
+  function injectBackPill() {
+    if (document.getElementById('mia-back-pill')) return;
+    var pill = document.createElement('a');
+    pill.id = 'mia-back-pill';
+    pill.href = '/#/dashboard?fromCowork=1';
+    pill.textContent = '← Back to Mia Console';
+    pill.style.cssText =
+      'position:fixed;top:14px;right:14px;z-index:9999;' +
+      'background:#1c1c1e;color:#fff;text-decoration:none;' +
+      'padding:8px 14px;border-radius:999px;' +
+      "font-family:'Segoe UI Variable','Segoe UI',system-ui,sans-serif;" +
+      'font-size:12.5px;font-weight:500;letter-spacing:0.01em;' +
+      'box-shadow:0 6px 20px rgba(0,0,0,0.18);' +
+      'display:inline-flex;align-items:center;gap:6px;';
+    document.body.appendChild(pill);
+  }
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', injectBackPill);
+  } else {
+    injectBackPill();
+  }
+})();
+</script>
+</body>
+</html>

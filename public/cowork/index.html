@@ -1,0 +1,1368 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<title>Project Mia</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Geist:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/cowork/_tokens.css">
+<style>
+  /* ───── Page (Cowork warm theme overrides the canonical light tokens) ───── */
+  body {
+    background: var(--cw-bg);
+    color: var(--cw-text);
+    margin: 0;
+    /* warm grid texture */
+    background-image:
+      linear-gradient(var(--cw-bg-grid) 1px, transparent 1px),
+      linear-gradient(90deg, var(--cw-bg-grid) 1px, transparent 1px);
+    background-size: 28px 28px;
+  }
+  .display { font-family: "Geist", "Segoe UI Variable", "Segoe UI", system-ui, -apple-system, sans-serif; font-weight: 600; letter-spacing: -0.01em; }
+  .mono    { font-family: "JetBrains Mono", "SF Mono", "Fira Code", "Courier New", monospace; }
+
+  /* ───── 3-pane shell ───── */
+  .shell {
+    display: grid;
+    grid-template-columns: 300px 1fr 340px;
+    height: 100vh;
+    overflow: hidden;
+  }
+
+  /* ───── Left rail ───── */
+  .rail {
+    background: var(--cw-bg);
+    border-right: 1px solid var(--cw-border);
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+  .rail-header {
+    padding: 18px 20px 12px;
+    display: flex; align-items: center; justify-content: space-between;
+  }
+  .wordmark { display: flex; align-items: center; gap: 10px; line-height: 1.1; }
+  .wordmark .cw-logo {
+    display: inline-flex; align-items: center; justify-content: center;
+    width: 26px; height: 26px;
+    flex: none;
+  }
+  .wordmark .cw-logo svg,
+  .wordmark .cw-logo img { display: block; width: 100%; height: 100%; object-fit: contain; }
+  .wordmark .mark {
+    font-family: "Segoe UI Variable", "Segoe UI", system-ui, -apple-system, "Inter", sans-serif;
+    font-size: 15px;
+    font-weight: 600;
+    color: var(--cw-text);
+    letter-spacing: -0.005em;
+  }
+
+  /* Rail section header (replaces the Chat/Cowork toggle) */
+  .rail-section {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 14px 18px 8px;
+  }
+  .rail-section-title {
+    font-family: "Segoe UI Variable", "Segoe UI", system-ui, sans-serif;
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--cw-text-muted);
+  }
+  .rail-section-add {
+    width: 24px; height: 24px;
+    display: inline-flex; align-items: center; justify-content: center;
+    border: 0;
+    background: transparent;
+    color: var(--cw-text-muted);
+    font-size: 18px;
+    line-height: 1;
+    cursor: pointer;
+    border-radius: 6px;
+    font-family: inherit;
+    padding: 0;
+    transition: all 0.15s;
+  }
+  .rail-section-add:hover { background: var(--cw-surface-hover); color: var(--cw-text); }
+  .icon-btn {
+    width: 30px; height: 30px;
+    display: inline-flex; align-items: center; justify-content: center;
+    color: var(--cw-text-muted);
+    border-radius: 6px;
+    cursor: pointer;
+    transition: background 0.15s;
+    background: none; border: none;
+  }
+  .icon-btn:hover { background: var(--cw-surface-hover); color: var(--cw-text); }
+
+  .seg {
+    margin: 6px 16px 14px;
+    padding: 4px;
+    background: var(--cw-surface-hover);
+    border-radius: 999px;
+    display: flex;
+  }
+  .seg button {
+    flex: 1;
+    padding: 7px 14px;
+    background: transparent;
+    border: none;
+    border-radius: 999px;
+    font-size: 13px;
+    color: var(--cw-text-muted);
+    cursor: pointer;
+    font-family: inherit;
+    transition: all 0.15s;
+  }
+  .seg button.active {
+    background: var(--cw-bg);
+    color: var(--cw-text);
+    box-shadow: 0 1px 2px rgba(0,0,0,0.04);
+  }
+
+  .new-task {
+    margin: 4px 16px 14px;
+    padding: 9px 12px;
+    border-radius: 10px;
+    border: none;
+    background: transparent;
+    cursor: pointer;
+    display: flex; align-items: center; gap: 10px;
+    font-family: inherit;
+    font-size: 14px;
+    color: var(--cw-text);
+    transition: background 0.15s;
+  }
+  .new-task:hover { background: var(--cw-surface-hover); }
+  .new-task .plus {
+    width: 26px; height: 26px;
+    background: var(--cw-text);
+    color: var(--cw-bg);
+    border-radius: 999px;
+    display: inline-flex; align-items: center; justify-content: center;
+    font-size: 16px; font-weight: 500;
+  }
+
+  .task-list {
+    flex: 1;
+    overflow-y: auto;
+    padding: 0 8px 16px;
+  }
+  .task-row {
+    padding: 10px 12px;
+    border-radius: 8px;
+    cursor: pointer;
+    display: flex; align-items: flex-start; justify-content: space-between;
+    gap: 10px;
+    transition: background 0.15s, border-color 0.15s, box-shadow 0.15s;
+    user-select: none;
+    border: 1px solid transparent;
+  }
+  .task-row:hover { background: var(--cw-surface-hover); }
+  .task-row.active {
+    background: var(--cw-accent-soft);
+    border-color: var(--cw-accent);
+    box-shadow: 0 2px 8px rgba(108,43,217,0.10);
+  }
+  .task-row.active .title { color: var(--cw-accent); font-weight: 600; }
+  .task-row .title { font-size: 13.5px; font-weight: 500; line-height: 1.3; color: var(--cw-text); }
+  .task-row .sub   { font-size: 12px; color: var(--cw-text-muted); margin-top: 2px; line-height: 1.35; }
+  .task-row .ind   {
+    width: 16px; height: 16px;
+    flex: none;
+    margin-top: 2px;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .ind-dot { width: 7px; height: 7px; border-radius: 999px; background: var(--cw-dot); }
+  .ind-spin {
+    width: 14px; height: 14px;
+    border-radius: 999px;
+    border: 1.5px solid var(--cw-border-strong);
+    border-top-color: transparent;
+    animation: spin 1.2s linear infinite;
+  }
+  .ind-circle {
+    width: 14px; height: 14px;
+    border-radius: 999px;
+    border: 1.5px solid var(--cw-border-strong);
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  .rail-footer {
+    border-top: 1px solid var(--cw-border);
+    padding: 12px 16px;
+    display: flex; align-items: center; gap: 10px;
+  }
+  .avatar {
+    width: 32px; height: 32px;
+    border-radius: 999px;
+    background: linear-gradient(135deg, #0078d4 0%, #004578 100%);
+    color: white;
+    display: inline-flex; align-items: center; justify-content: center;
+    font-weight: 600; font-size: 13px;
+    flex: none;
+  }
+  .persona { flex: 1; }
+  .persona .name { font-size: 13.5px; font-weight: 500; }
+  .persona .org  { font-size: 12px; color: var(--cw-text-muted); }
+
+  /* ───── Center (welcome) ───── */
+  .center {
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+  }
+  .welcome {
+    width: 100%;
+    max-width: 880px;
+    padding: 40px 36px 80px;
+    text-align: center;
+  }
+  .hero-logo {
+    width: 120px; height: 120px;
+    margin: 0 auto 24px;
+  }
+  .hero-logo svg,
+  .hero-logo img { width: 100%; height: 100%; display: block; object-fit: contain; }
+
+  .welcome-h1 {
+    font-family: "Geist", sans-serif;
+    font-weight: 400;
+    font-size: 44px;
+    line-height: 1.15;
+    color: var(--cw-text);
+    margin: 0 0 14px;
+    letter-spacing: -0.015em;
+  }
+  .welcome-h1 strong {
+    font-weight: 700;
+    color: var(--cw-text);
+  }
+  .welcome-sub {
+    color: var(--cw-text-muted);
+    font-size: 16px;
+    max-width: 640px;
+    margin: 0 auto 36px;
+    line-height: 1.5;
+  }
+
+  /* Pill composer */
+  .composer-pill {
+    max-width: 760px;
+    margin: 0 auto 22px;
+    display: flex; align-items: center;
+    background: var(--cw-surface);
+    border: 1px solid var(--cw-border);
+    border-radius: 999px;
+    padding: 6px 6px 6px 22px;
+    box-shadow: 0 1px 2px rgba(0,0,0,0.03), 0 6px 18px rgba(0,0,0,0.04);
+    transition: border-color 0.15s, box-shadow 0.15s;
+  }
+  .composer-pill:focus-within {
+    border-color: var(--cw-accent);
+    box-shadow: 0 0 0 4px var(--cw-accent-soft), 0 6px 18px rgba(108,43,217,0.08);
+  }
+  .composer-pill input {
+    flex: 1;
+    border: none;
+    outline: none;
+    background: transparent;
+    font-family: inherit;
+    font-size: 15px;
+    color: var(--cw-text);
+    padding: 12px 8px;
+  }
+  .composer-pill input::placeholder { color: var(--cw-text-soft); }
+  .send-circle {
+    width: 40px; height: 40px;
+    border-radius: 999px;
+    border: none;
+    background: linear-gradient(135deg, var(--cw-accent-grad-1) 0%, var(--cw-accent-grad-2) 100%);
+    color: white;
+    cursor: pointer;
+    display: inline-flex; align-items: center; justify-content: center;
+    flex: none;
+    transition: transform 0.15s, box-shadow 0.15s;
+  }
+  .send-circle:hover {
+    transform: scale(1.04);
+    box-shadow: 0 4px 14px rgba(108,43,217,0.35);
+  }
+
+  /* Chip row */
+  .chips-row {
+    display: flex; flex-wrap: wrap;
+    justify-content: center;
+    gap: 8px 10px;
+    max-width: 720px;
+    margin: 0 auto 18px;
+  }
+  .chip {
+    background: var(--cw-surface);
+    border: 1px solid var(--cw-border);
+    border-radius: 999px;
+    padding: 8px 16px;
+    font-family: inherit;
+    font-size: 13.5px;
+    color: var(--cw-text);
+    cursor: pointer;
+    transition: all 0.15s;
+    display: inline-flex; align-items: center;
+    line-height: 1;
+  }
+  .chip:hover {
+    border-color: var(--cw-border-strong);
+    background: var(--cw-surface-hover);
+  }
+  .chip.primary {
+    border-color: var(--cw-accent);
+    color: var(--cw-accent);
+    background: var(--cw-surface);
+    box-shadow: 0 0 0 1px var(--cw-accent-soft);
+  }
+  .chip.primary:hover {
+    background: var(--cw-accent-soft);
+  }
+
+  .welcome-tip {
+    margin-top: 22px;
+    font-size: 12px;
+    color: var(--cw-text-soft);
+    text-align: center;
+  }
+  .welcome-tip b { color: var(--cw-text-muted); font-weight: 600; }
+
+  .composer {
+    background: var(--cw-surface);
+    border: 1px solid var(--cw-border);
+    border-radius: 14px;
+    padding: 14px 16px 12px;
+    box-shadow: 0 1px 2px rgba(0,0,0,0.03), 0 4px 12px rgba(0,0,0,0.04);
+  }
+  .composer textarea {
+    width: 100%;
+    border: none;
+    outline: none;
+    background: transparent;
+    resize: none;
+    font-family: inherit;
+    font-size: 14px;
+    color: var(--cw-text);
+    min-height: 38px;
+    line-height: 1.45;
+  }
+  .composer textarea::placeholder { color: var(--cw-text-soft); }
+  .composer-row {
+    margin-top: 8px;
+    display: flex; align-items: center; justify-content: space-between;
+  }
+  .composer .add {
+    width: 30px; height: 30px;
+    border: 1px solid var(--cw-border);
+    border-radius: 999px;
+    background: transparent;
+    cursor: pointer;
+    color: var(--cw-text-muted);
+    font-size: 16px;
+  }
+  .composer .add:hover { background: var(--cw-surface-hover); }
+  .start-btn {
+    background: var(--cw-accent);
+    color: #fff;
+    border: none;
+    border-radius: 999px;
+    padding: 8px 18px;
+    font-family: inherit;
+    font-weight: 500;
+    font-size: 13.5px;
+    cursor: pointer;
+    display: inline-flex; align-items: center; gap: 6px;
+    transition: background 0.15s;
+  }
+  .start-btn:hover { background: var(--cw-accent-hover); }
+
+  /* Active-task center view */
+  .center.task-mode { justify-content: flex-start; align-items: stretch; }
+  .task-bar {
+    position: sticky; top: 0;
+    background: rgba(246,241,231,0.92);
+    backdrop-filter: blur(8px);
+    border-bottom: 1px solid var(--cw-border);
+    padding: 14px 28px;
+    display: flex; align-items: center; justify-content: space-between;
+    z-index: 5;
+  }
+  .task-bar .crumb { font-size: 13px; color: var(--cw-text-muted); }
+  .task-bar .crumb b { color: var(--cw-text); font-weight: 500; }
+  .task-bar .actions { display: flex; gap: 8px; }
+  .pill {
+    padding: 6px 12px;
+    border-radius: 999px;
+    border: 1px solid var(--cw-border);
+    background: var(--cw-surface);
+    font-size: 12px;
+    color: var(--cw-text);
+    cursor: pointer;
+    font-family: inherit;
+    transition: background 0.15s;
+  }
+  .pill:hover { background: var(--cw-surface-hover); }
+  .pill.primary { background: var(--cw-accent); color: white; border-color: var(--cw-accent); }
+  .pill.primary:hover { background: var(--cw-accent-hover); border-color: var(--cw-accent-hover); }
+
+  .thread {
+    flex: 1;
+    overflow-y: auto;
+    padding: 28px 32px 28px;
+    max-width: 760px;
+    width: 100%;
+    margin: 0 auto;
+  }
+  .msg { margin-bottom: 22px; max-width: 100%; animation: msgIn 0.25s ease; }
+  @keyframes msgIn { from { transform: translateY(4px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+  .msg.user .bubble {
+    background: var(--cw-text);
+    color: var(--cw-bg);
+    border-radius: 16px 16px 4px 16px;
+    margin-left: auto;
+    max-width: 80%;
+    padding: 10px 14px;
+    width: fit-content;
+  }
+  .msg.user { display: flex; justify-content: flex-end; }
+  .msg.bot .bubble {
+    color: var(--cw-text);
+    background: transparent;
+    line-height: 1.55;
+    font-size: 15px;
+  }
+  .msg .bubble b { font-weight: 600; }
+  .msg .bubble code, .msg .bubble .mono {
+    font-family: "JetBrains Mono", monospace;
+    font-size: 13px;
+    background: var(--cw-surface);
+    border: 1px solid var(--cw-border);
+    padding: 1px 6px;
+    border-radius: 4px;
+    color: var(--cw-text);
+  }
+  .file-chip {
+    display: inline-flex; align-items: center; gap: 8px;
+    background: var(--cw-bg);
+    color: var(--cw-bg);
+    background: rgba(255,255,255,0.15);
+    border: 1px solid rgba(255,255,255,0.25);
+    border-radius: 8px;
+    padding: 6px 10px;
+    font-size: 12px;
+    margin-bottom: 6px;
+  }
+  .file-chip .doc { font-size: 14px; }
+
+  .plan-card {
+    background: var(--cw-surface);
+    border: 1px solid var(--cw-border);
+    border-radius: 14px;
+    padding: 16px 18px;
+    margin-top: 8px;
+  }
+  .plan-card h3 {
+    font-family: "Geist", "Segoe UI Variable", "Segoe UI", system-ui, -apple-system, sans-serif;
+    font-size: 20px;
+    font-weight: 600;
+    letter-spacing: -0.01em;
+    margin: 0 0 6px;
+  }
+  .plan-card .plan-sub { font-size: 13px; color: var(--cw-text-muted); margin-bottom: 14px; }
+  .plan-step {
+    border-top: 1px solid var(--cw-border);
+    padding: 12px 0;
+  }
+  .plan-step:first-of-type { border-top: none; padding-top: 4px; }
+  .plan-step-head {
+    display: flex; align-items: center; gap: 10px;
+    cursor: pointer;
+    user-select: none;
+  }
+  .plan-step .check {
+    width: 18px; height: 18px;
+    border: 1.5px solid var(--cw-border-strong);
+    border-radius: 5px;
+    flex: none;
+    display: inline-flex; align-items: center; justify-content: center;
+    font-size: 12px;
+    color: var(--cw-text);
+    background: white;
+  }
+  .plan-step .name { font-size: 14px; font-weight: 500; flex: 1; }
+  .plan-step .meta { font-size: 11.5px; color: var(--cw-text-muted); font-family: "JetBrains Mono", monospace; }
+  .plan-step .caret { color: var(--cw-text-muted); font-size: 11px; transition: transform 0.2s; margin-left: 6px; }
+  .plan-step.open .caret { transform: rotate(90deg); }
+  .plan-step .diff {
+    display: none;
+    margin-top: 10px;
+    padding: 12px 14px;
+    background: var(--cw-bg);
+    border: 1px solid var(--cw-border);
+    border-radius: 8px;
+    font-family: "JetBrains Mono", monospace;
+    font-size: 12px;
+    color: var(--cw-text);
+    white-space: pre-wrap;
+    line-height: 1.55;
+  }
+  .plan-step.open .diff { display: block; }
+  .plan-step .diff .add { color: #15803d; }
+  .plan-step .diff .key { color: var(--cw-accent); }
+
+  .plan-decisions {
+    margin-top: 12px;
+    padding: 12px 14px;
+    background: var(--cw-bg);
+    border: 1px solid var(--cw-border);
+    border-radius: 8px;
+    font-size: 13px;
+  }
+  .plan-decisions b { display: block; font-size: 12px; text-transform: uppercase; letter-spacing: 0.05em; color: var(--cw-text-muted); margin-bottom: 6px; }
+  .plan-cta {
+    margin-top: 14px;
+    display: flex; gap: 8px; justify-content: flex-end;
+  }
+
+  .composer-bottom {
+    border-top: 1px solid var(--cw-border);
+    padding: 16px 32px 22px;
+    background: var(--cw-bg);
+  }
+  .composer-bottom .composer { max-width: 760px; margin: 0 auto; }
+
+  .typing {
+    display: inline-flex; gap: 4px; align-items: center;
+    color: var(--cw-text-soft); font-size: 13px;
+  }
+  .typing span {
+    width: 5px; height: 5px; border-radius: 999px; background: var(--cw-text-soft);
+    animation: typing 1.2s infinite;
+  }
+  .typing span:nth-child(2) { animation-delay: 0.15s; }
+  .typing span:nth-child(3) { animation-delay: 0.3s; }
+  @keyframes typing {
+    0%, 60%, 100% { transform: translateY(0); opacity: 0.3; }
+    30% { transform: translateY(-3px); opacity: 1; }
+  }
+
+  /* ───── Right rail ───── */
+  .right {
+    background: var(--cw-bg);
+    border-left: 1px solid var(--cw-border);
+    overflow-y: auto;
+    padding: 0;
+    display: flex; flex-direction: column;
+  }
+  .right.collapsed { display: none; }
+  .right-head {
+    padding: 16px 18px 14px;
+    display: flex; align-items: center; justify-content: space-between;
+    border-bottom: 1px solid var(--cw-border);
+    background: var(--cw-bg);
+    position: sticky; top: 0; z-index: 2;
+  }
+  .right-title {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--cw-text);
+    letter-spacing: -0.005em;
+  }
+  .right > .panel { margin: 0; border-radius: 0; border: none; border-bottom: 1px solid var(--cw-border); background: transparent; }
+  .right > .panel:last-child { border-bottom: none; }
+  /* Keep Progress pinned at top so it's always visible as steps grow */
+  .right > #panel-progress {
+    position: sticky;
+    top: 49px;            /* sits just below the sticky Details header */
+    background: var(--cw-bg);
+    z-index: 1;
+    box-shadow: 0 6px 16px -10px rgba(0,0,0,0.08);
+  }
+  .panel {
+    background: var(--cw-surface);
+    border: 1px solid var(--cw-border);
+    border-radius: 12px;
+    overflow: hidden;
+  }
+  .panel-head {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 12px 14px;
+    cursor: pointer;
+    user-select: none;
+  }
+  .panel-head .title { font-size: 14px; font-weight: 500; color: var(--cw-text); }
+  .panel-head .chev { color: var(--cw-text-muted); font-size: 12px; transition: transform 0.2s; }
+  .panel-head .ph-right { display: inline-flex; align-items: center; gap: 4px; }
+  .panel.collapsed .chev { transform: rotate(-90deg); }
+  .panel.collapsed .panel-body { display: none; }
+  .panel-body {
+    padding: 0 14px 16px;
+    color: var(--cw-text-muted);
+    font-size: 13px;
+    line-height: 1.5;
+  }
+  .panel-body.empty { text-align: left; }
+  .placeholder-art {
+    height: 56px;
+    display: flex; align-items: center; justify-content: flex-start;
+    color: var(--cw-text-soft);
+    margin-bottom: 8px;
+  }
+
+  /* Empty-state inside each right-rail panel */
+  .empty-state {
+    padding: 18px 4px 4px;
+    display: flex; flex-direction: column; align-items: center; text-align: center;
+  }
+  .empty-state .empty-icon { margin-bottom: 12px; opacity: 0.85; }
+  .empty-state .empty-title {
+    font-size: 13.5px;
+    font-weight: 500;
+    color: var(--cw-text);
+    margin-bottom: 4px;
+  }
+  .empty-state .empty-sub {
+    font-size: 12px;
+    color: var(--cw-text-soft);
+    line-height: 1.45;
+  }
+  .empty-state .empty-text {
+    font-size: 13px;
+    color: var(--cw-text-muted);
+    padding: 8px 0;
+  }
+  /* Skill rows */
+  .skills-list { display: flex; flex-direction: column; gap: 6px; }
+  .skill-row {
+    display: flex; align-items: center; gap: 10px;
+    padding: 8px 10px;
+    background: var(--cw-bg);
+    border: 1px solid var(--cw-border);
+    border-radius: 8px;
+    font-size: 12.5px;
+  }
+  .skill-row .lit {
+    width: 22px; height: 22px;
+    border-radius: 999px;
+    background: var(--cw-accent-soft);
+    color: var(--cw-accent);
+    display: inline-flex; align-items: center; justify-content: center;
+    font-size: 11px;
+    flex: none;
+  }
+  .skill-row .name { flex: 1; color: var(--cw-text); font-family: "JetBrains Mono", monospace; font-size: 12px; }
+  .skill-row .runs { color: var(--cw-text-muted); font-family: "JetBrains Mono", monospace; font-size: 11px; }
+
+  /* Progress steps */
+  .progress-row { display: flex; align-items: center; gap: 0; margin-bottom: 10px; }
+  .pstep {
+    width: 26px; height: 26px;
+    border-radius: 999px;
+    border: 1.5px solid var(--cw-border-strong);
+    display: inline-flex; align-items: center; justify-content: center;
+    font-size: 13px;
+    color: var(--cw-text-muted);
+    background: var(--cw-surface);
+    position: relative;
+    flex: none;
+  }
+  .pstep.done { background: var(--cw-text); color: var(--cw-bg); border-color: var(--cw-text); }
+  .pstep.cur  { background: var(--cw-accent); color: white; border-color: var(--cw-accent); animation: pulse 2s infinite; }
+  @keyframes pulse {
+    0%, 100% { box-shadow: 0 0 0 0 rgba(200,98,59,0.45); }
+    50%      { box-shadow: 0 0 0 6px rgba(200,98,59,0); }
+  }
+  .pdash { flex: 1; height: 1.5px; background: var(--cw-border-strong); margin: 0 4px; }
+  .pdash.done { background: var(--cw-text); }
+
+  .progress-step-list { font-size: 13px; line-height: 1.6; color: var(--cw-text-muted); }
+  .progress-step-list .item { display: flex; align-items: center; gap: 8px; padding: 4px 0; }
+  .progress-step-list .item .badge {
+    font-family: "JetBrains Mono", monospace;
+    font-size: 10px; padding: 1px 6px; border-radius: 4px;
+    background: var(--status-deferred-bg); color: var(--status-deferred-fg);
+    text-transform: uppercase; font-weight: 600;
+  }
+  .progress-step-list .item.done .badge { background: var(--status-done-bg); color: var(--status-done-fg); }
+  .progress-step-list .item.cur .badge { background: var(--status-prog-bg); color: var(--status-prog-fg); }
+  .progress-step-list .item .name { color: var(--cw-text); }
+
+  .artifact-list, .context-list {
+    display: flex; flex-direction: column; gap: 6px;
+  }
+  .artifact, .context-item {
+    display: flex; align-items: center; gap: 10px;
+    padding: 8px 10px;
+    background: var(--cw-bg);
+    border: 1px solid var(--cw-border);
+    border-radius: 8px;
+    font-size: 12.5px;
+    color: var(--cw-text);
+    cursor: pointer;
+    transition: background 0.15s;
+  }
+  .artifact:hover, .context-item:hover { background: var(--cw-surface-hover); }
+  .artifact .file { color: var(--cw-accent); font-size: 16px; }
+  .artifact .meta, .context-item .meta { font-size: 11px; color: var(--cw-text-muted); margin-left: auto; font-family: "JetBrains Mono", monospace; }
+
+  /* Skill pill (used inline on chat) */
+  .skill-tag {
+    display: inline-flex; align-items: center; gap: 6px;
+    padding: 3px 8px;
+    background: var(--cw-accent-soft);
+    border: 1px solid var(--cw-accent);
+    border-radius: 999px;
+    color: var(--cw-accent);
+    font-size: 11.5px;
+    font-weight: 500;
+    font-family: "JetBrains Mono", monospace;
+    margin-right: 6px;
+  }
+
+  /* Side hint arrows on the right (matches reference) */
+  .side-arrow {
+    position: fixed;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 28px; height: 56px;
+    border: 1px solid var(--cw-border);
+    border-radius: 8px;
+    background: var(--cw-bg);
+    color: var(--cw-text-muted);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 14px;
+    z-index: 4;
+    cursor: pointer;
+  }
+  .side-arrow.left  { left: 286px; }
+  .side-arrow.right { right: 326px; }
+
+  /* Scrollbars */
+  ::-webkit-scrollbar { width: 10px; height: 10px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: var(--cw-border); border-radius: 5px; }
+  ::-webkit-scrollbar-thumb:hover { background: var(--cw-border-strong); }
+
+  /* Login overlay */
+  .login-overlay {
+    position: fixed; inset: 0;
+    background: var(--cw-bg);
+    display: flex; align-items: center; justify-content: center;
+    z-index: 100;
+  }
+  .login-card {
+    background: var(--cw-surface);
+    border: 1px solid var(--cw-border);
+    border-radius: 16px;
+    padding: 32px 36px;
+    width: 380px;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.06);
+  }
+  .login-card h2 {
+    font-family: "Geist", "Segoe UI Variable", "Segoe UI", system-ui, -apple-system, sans-serif;
+    font-size: 32px; font-weight: 400; margin: 0 0 6px;
+  }
+  .login-card p { color: var(--cw-text-muted); font-size: 14px; margin: 0 0 22px; }
+  .login-card label { display: block; font-size: 12px; color: var(--cw-text-muted); text-transform: uppercase; letter-spacing: 0.04em; margin: 14px 0 6px; }
+  .login-card select, .login-card input {
+    width: 100%;
+    padding: 10px 12px;
+    border: 1px solid var(--cw-border);
+    border-radius: 8px;
+    background: var(--cw-bg);
+    color: var(--cw-text);
+    font-family: inherit;
+    font-size: 14px;
+  }
+  .login-card .enter {
+    margin-top: 22px;
+    width: 100%;
+    background: var(--cw-accent);
+    color: white;
+    border: none;
+    border-radius: 999px;
+    padding: 11px;
+    font-family: inherit;
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+  }
+  .login-card .enter:hover { background: var(--cw-accent-hover); }
+
+  /* Hide scroll on body when login open */
+  body.lock { overflow: hidden; }
+
+  /* ───── Rail collapsed state ───── */
+  .shell.rail-collapsed { grid-template-columns: 0 1fr 340px; }
+  .shell.rail-collapsed.right-collapsed { grid-template-columns: 0 1fr 0; }
+  .shell.right-collapsed { grid-template-columns: 300px 1fr 0; }
+  .rail.collapsed { display: none; }
+  .right.collapsed { display: none; }
+
+  /* Floating "show rail" pill when rail collapsed */
+  .show-rail-pill {
+    position: fixed;
+    left: 14px; top: 14px;
+    background: var(--cw-text);
+    color: var(--cw-bg);
+    border: none;
+    border-radius: 999px;
+    padding: 8px 14px;
+    font-family: inherit;
+    font-size: 12.5px;
+    cursor: pointer;
+    z-index: 50;
+    display: none;
+    box-shadow: 0 6px 20px rgba(0,0,0,0.12);
+  }
+  .show-rail-pill.show { display: inline-flex; align-items: center; gap: 6px; }
+  .show-rail-pill:hover { background: var(--cw-text); opacity: 0.9; }
+
+  /* ───── Persona popover menu ───── */
+  .persona-menu {
+    position: absolute;
+    bottom: 56px; left: 14px;
+    background: var(--cw-surface);
+    border: 1px solid var(--cw-border);
+    border-radius: 10px;
+    padding: 6px;
+    min-width: 170px;
+    box-shadow: 0 10px 28px rgba(0,0,0,0.10);
+    z-index: 30;
+    display: flex; flex-direction: column;
+  }
+  .persona-menu[hidden] { display: none; }
+  .persona-menu button {
+    background: transparent;
+    border: none;
+    text-align: left;
+    padding: 8px 10px;
+    border-radius: 7px;
+    font-family: inherit;
+    font-size: 13px;
+    color: var(--cw-text);
+    cursor: pointer;
+  }
+  .persona-menu button:hover { background: var(--cw-surface-hover); }
+
+  /* ───── Chat history list ───── */
+  .chat-history-list { display: flex; flex-direction: column; gap: 8px; }
+  .chat-history-item {
+    background: var(--cw-surface);
+    border: 1px solid var(--cw-border);
+    border-radius: 12px;
+    padding: 14px 16px;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+  .chat-history-item:hover { background: var(--cw-surface-hover); border-color: var(--cw-border-strong); }
+  .chat-history-item .h-title { font-size: 14.5px; font-weight: 500; color: var(--cw-text); margin-bottom: 4px; }
+  .chat-history-item .h-snip  { font-size: 13px; color: var(--cw-text-muted); line-height: 1.45; margin-bottom: 6px; }
+  .chat-history-item .h-meta  { font-size: 11.5px; color: var(--cw-text-soft); font-family: "JetBrains Mono", monospace; }
+
+  /* ───── Choice card (agent posts a multi-choice picker in the chat) ───── */
+  .choice-card {
+    background: var(--cw-surface);
+    border: 1px solid var(--cw-border);
+    border-radius: 14px;
+    padding: 16px 18px;
+    margin-top: 8px;
+  }
+  .choice-card .ch-head {
+    display: flex; align-items: center; justify-content: space-between;
+    margin-bottom: 10px;
+  }
+  .choice-card .ch-head .title { font-weight: 600; font-size: 14.5px; }
+  .choice-card .ch-head .meta {
+    display: flex; align-items: center; gap: 12px;
+    font-size: 11.5px; color: var(--cw-text-muted);
+    font-family: "JetBrains Mono", monospace;
+  }
+  .choice-card .ch-head .x {
+    color: var(--cw-text-muted); cursor: pointer;
+    font-size: 16px; line-height: 1;
+    background: none; border: none; padding: 2px 4px;
+  }
+  .choice-card .ch-head .x:hover { color: var(--cw-text); }
+  .choice-card .options { display: flex; flex-direction: column; gap: 4px; }
+  .choice-option {
+    display: flex; align-items: flex-start; gap: 12px;
+    padding: 12px 12px;
+    border: 1.5px solid transparent;
+    border-radius: 10px;
+    cursor: pointer;
+    transition: all 0.15s;
+    font-family: inherit; text-align: left;
+    background: transparent;
+  }
+  .choice-option:hover { background: var(--cw-bg); }
+  .choice-option.selected {
+    border-color: var(--cw-text);
+    background: var(--cw-bg);
+  }
+  .choice-option .radio {
+    width: 16px; height: 16px;
+    border: 1.5px solid var(--cw-border-strong);
+    border-radius: 999px;
+    flex: none;
+    margin-top: 2px;
+    position: relative;
+    background: var(--cw-surface);
+  }
+  .choice-option.selected .radio { border-color: var(--cw-text); }
+  .choice-option.selected .radio::after {
+    content: "";
+    position: absolute;
+    top: 3px; left: 3px;
+    width: 7px; height: 7px;
+    background: var(--cw-text);
+    border-radius: 999px;
+  }
+  .choice-option .opt-body { flex: 1; }
+  .choice-option .opt-title { font-weight: 500; font-size: 13.5px; color: var(--cw-text); }
+  .choice-option .opt-desc {
+    font-size: 12.5px; color: var(--cw-text-muted);
+    margin-top: 3px; line-height: 1.45;
+  }
+  .choice-option.free input {
+    width: 100%;
+    border: none;
+    border-bottom: 1px dashed var(--cw-border-strong);
+    background: transparent;
+    font-family: inherit;
+    font-size: 13px;
+    padding: 4px 0;
+    outline: none;
+    color: var(--cw-text);
+  }
+  .choice-card .ch-foot {
+    margin-top: 12px;
+    padding-top: 12px;
+    border-top: 1px solid var(--cw-border);
+    display: flex; align-items: center; justify-content: space-between;
+    gap: 10px;
+  }
+  .choice-card .kbd {
+    font-size: 11.5px; color: var(--cw-text-soft);
+  }
+  .choice-card .kbd b {
+    font-family: "JetBrains Mono", monospace;
+    font-weight: 500;
+    color: var(--cw-text-muted);
+  }
+  .choice-card .skip-btn {
+    background: transparent;
+    border: 1px solid var(--cw-border-strong);
+    border-radius: 999px;
+    padding: 5px 14px;
+    font-family: inherit;
+    font-size: 12px;
+    cursor: pointer;
+    color: var(--cw-text);
+  }
+  .choice-card .skip-btn:hover { background: var(--cw-bg); }
+
+  /* ───── Local task list (vertical, with connector + circle indicators) ───── */
+  .progress-counter {
+    background: var(--cw-bg-grid);
+    padding: 1px 10px;
+    border-radius: 999px;
+    font-size: 11.5px;
+    font-family: "JetBrains Mono", monospace;
+    color: var(--cw-text);
+    margin-right: 8px;
+  }
+  .local-task-list {
+    margin-top: 6px;
+    padding-left: 4px;
+    max-height: 360px;
+    overflow-y: auto;
+    scroll-behavior: smooth;
+    /* Hide scrollbar while keeping scroll functionality */
+    scrollbar-width: thin;
+  }
+  .local-task-list::-webkit-scrollbar { width: 4px; }
+  .local-task-list::-webkit-scrollbar-thumb { background: var(--cw-border-strong); border-radius: 4px; }
+  .local-task {
+    display: flex; align-items: center; gap: 12px;
+    padding: 7px 0;
+    position: relative;
+  }
+  .local-task::before {
+    content: "";
+    position: absolute;
+    left: 9px; top: 26px; bottom: -7px;
+    width: 1.5px;
+    background: var(--cw-border-strong);
+    z-index: 0;
+  }
+  .local-task:last-child::before { display: none; }
+  .local-task .circ {
+    width: 18px; height: 18px;
+    border: 1.5px dashed var(--cw-border-strong);
+    border-radius: 999px;
+    flex: none;
+    background: var(--cw-bg);
+    position: relative;
+    z-index: 1;
+    display: inline-flex; align-items: center; justify-content: center;
+    font-size: 10px; color: var(--cw-bg);
+  }
+  .local-task.cur .circ {
+    border-style: solid;
+    border-color: var(--cw-accent);
+    border-top-color: transparent;
+    animation: spin 1s linear infinite;
+  }
+  .local-task.done .circ {
+    border: none;
+    background: var(--cw-text);
+    color: var(--cw-bg);
+  }
+  .local-task.wait .circ {
+    border: 1.5px solid #e0b75d;
+    background: #fff5d6;
+    color: #8a6d00;
+    font-weight: 700;
+    font-size: 11px;
+  }
+  .local-task .lt-body { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+  .local-task .ltname { font-size: 13px; color: var(--cw-text); }
+  .local-task .ltmeta {
+    font-size: 11.5px;
+    color: var(--cw-text-soft);
+    line-height: 1.4;
+  }
+  .local-task .ltmeta code {
+    font-family: "JetBrains Mono", monospace;
+    font-size: 11px;
+    background: var(--cw-surface-hover);
+    padding: 1px 5px;
+    border-radius: 4px;
+    color: var(--cw-text-muted);
+  }
+  .local-task.todo .ltname { color: var(--cw-text-muted); }
+  .local-task.done .ltname { color: var(--cw-text-muted); }
+
+  /* ───── Toast (for non-active task previews + dashboard buttons) ───── */
+  .toast {
+    position: fixed;
+    bottom: 24px; left: 50%;
+    transform: translateX(-50%);
+    background: var(--cw-text);
+    color: var(--cw-bg);
+    padding: 10px 18px;
+    border-radius: 999px;
+    font-size: 13px;
+    z-index: 200;
+    box-shadow: 0 8px 24px rgba(0,0,0,0.12);
+    animation: toastIn 0.25s ease, toastOut 0.25s ease 2.5s forwards;
+  }
+  @keyframes toastIn  { from { transform: translateX(-50%) translateY(8px); opacity: 0; } }
+  @keyframes toastOut { to   { transform: translateX(-50%) translateY(8px); opacity: 0; } }
+</style>
+</head>
+<body>
+
+<!-- ───────── LOGIN OVERLAY (hidden by default; demo skips login) ───────── -->
+<div id="login" class="login-overlay" style="display:none">
+  <div class="login-card">
+    <h2>Project Mia</h2>
+    <p>Sign in to continue your D365 implementation work.</p>
+    <label for="login-persona">Persona</label>
+    <select id="login-persona">
+      <option value="da">Delivery Architect — Microsoft FastTrack</option>
+      <option value="sme">Customer SME — Zava Agentic Retailer</option>
+    </select>
+    <label for="login-name">Name</label>
+    <input id="login-name" type="text" value="Gokul Ramesh" />
+    <button id="login-enter" class="enter">Enter →</button>
+  </div>
+</div>
+
+<!-- ───────── SHELL ───────── -->
+<div class="shell">
+
+  <!-- LEFT RAIL -->
+  <aside class="rail">
+    <div class="rail-header">
+      <span class="wordmark">
+        <span class="cw-logo" aria-hidden="true">
+          <img src="/cowork/dynamics365_256x256.png" alt="Dynamics 365" />
+        </span>
+        <span class="mark">Project Mia</span>
+      </span>
+      <button id="rail-toggle" type="button" class="icon-btn" title="Collapse rail" aria-label="Collapse rail">
+        <svg width="18" height="18" viewBox="0 0 18 18" fill="none"><rect x="2.5" y="3" width="13" height="12" rx="2" stroke="currentColor" stroke-width="1.4"/><line x1="7" y1="3" x2="7" y2="15" stroke="currentColor" stroke-width="1.4"/></svg>
+      </button>
+    </div>
+
+    <div class="rail-section">
+      <span class="rail-section-title">SESSIONS</span>
+      <button class="rail-section-add" id="new-task" type="button" title="New session" aria-label="New session">+</button>
+    </div>
+
+    <div class="task-list" id="task-list"></div>
+
+    <div class="rail-footer" style="position: relative;">
+      <div class="avatar" id="user-avatar">GR</div>
+      <div class="persona">
+        <div class="name" id="user-name">Gokul Ramesh</div>
+        <div class="org" id="user-org">Microsoft FastTrack</div>
+      </div>
+      <button id="persona-menu-btn" type="button" class="icon-btn" title="Account menu" aria-label="Account menu">
+        <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M3 5l4 4 4-4" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </button>
+      <div id="persona-menu" class="persona-menu" hidden>
+        <button type="button" data-act="reset">Reset</button>
+        <button type="button" data-act="signout">Sign out</button>
+      </div>
+    </div>
+  </aside>
+
+  <!-- CENTER -->
+  <main class="center" id="center">
+    <!-- WELCOME (default) -->
+    <div class="welcome" id="view-welcome">
+      <div class="hero-logo" aria-hidden="true">
+        <img src="/cowork/dynamics365_256x256.png" alt="Dynamics 365" />
+      </div>
+
+      <h1 class="welcome-h1">Configure <strong>D365 Finance &amp; Operations</strong></h1>
+      <p class="welcome-sub">Tell me about your company and I'll set up the entire ERP configuration.</p>
+
+      <div class="composer-pill">
+        <input id="welcome-input" type="text"
+               placeholder="Describe your company and what you need configured..." />
+        <button id="welcome-start" type="button" class="send-circle" aria-label="Send">
+          <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+            <path d="M3 8h10M9 4l4 4-4 4" stroke="white" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+        </button>
+      </div>
+
+      <div class="chips-row">
+        <button type="button" class="chip" data-q="Review customer data uploaded for the project">Review customer data</button>
+        <button type="button" class="chip" data-q="Review the business processes in scope">Review business processes</button>
+        <button type="button" class="chip" data-q="Review the current configuration status">Review current status</button>
+        <button type="button" class="chip primary" data-q="Set up new legal entity USMF for U.S. operations (Zava Agentic Retailer)">
+          <svg width="14" height="14" viewBox="0 0 16 16" style="margin-right: 6px;" aria-hidden="true">
+            <path d="M8 1l1.5 4 4 1.5-4 1.5L8 12l-1.5-4-4-1.5 4-1.5L8 1z" fill="currentColor"/>
+            <path d="M13 11l0.6 1.6 1.6 0.6-1.6 0.6-0.6 1.6-0.6-1.6-1.6-0.6 1.6-0.6 0.6-1.6z" fill="currentColor"/>
+          </svg>
+          Start configuration
+        </button>
+        <button type="button" class="chip" data-q="Help me configure a new warehouse — DC-Atlanta for the ZAUS legal entity">Help me configure a new warehouse</button>
+        <button type="button" class="chip" data-q="Review any open issues or blocked tasks">Review open issues</button>
+      </div>
+
+      <input id="welcome-file" type="file" accept=".md,.csv,.json,.txt,.pdf" hidden />
+      <div class="welcome-tip">
+        Tip: drop a SOW into the box, click <b>Start configuration</b>, or type your own intent.
+      </div>
+    </div>
+
+    <!-- CHAT HISTORY (Chat tab) -->
+    <div id="view-chat" style="display:none; width: 100%; max-width: 720px; padding: 60px 36px 60px;">
+      <h1 class="display" style="font-size: 38px; line-height: 1.1; margin: 0 0 12px;">Your conversations</h1>
+      <p style="color: var(--cw-text-muted); font-size: 14px; margin: 0 0 28px;">Past chats with Project Mia. Click any to resume — or start fresh from the <b>Cowork</b> tab.</p>
+      <div id="chat-history-list" class="chat-history-list"></div>
+    </div>
+
+    <!-- ACTIVE TASK -->
+    <div id="view-task" style="display:none; height: 100vh; flex-direction: column;">
+      <div class="task-bar">
+        <div class="crumb">
+          <span>Project Mia</span> <span style="color: var(--cw-text-soft); margin: 0 6px;">/</span>
+          <b id="task-bar-title">Configure USMF Legal Entity</b>
+          <span class="mono" style="margin-left:10px; color: var(--cw-text-soft); font-size:11.5px;">d365perflab.sandbox.operations.dynamics.com</span>
+        </div>
+        <div class="actions">
+          <button class="pill" id="btn-back">← Back</button>
+          <button class="pill" id="btn-dashboard">Dataverse Dashboard</button>
+        </div>
+      </div>
+
+      <div class="thread" id="thread"></div>
+
+      <div class="composer-bottom">
+        <div class="composer">
+          <textarea id="task-input" placeholder="Reply to the agent or paste more context"></textarea>
+          <div class="composer-row">
+            <button class="add" id="task-add" title="Attach file">+</button>
+            <button class="start-btn" id="task-send">Send <span>→</span></button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <!-- RIGHT RAIL -->
+  <aside class="right" id="right">
+    <div class="right-head">
+      <span class="right-title">Details</span>
+      <button class="icon-btn" id="right-close" title="Hide panel" aria-label="Hide panel">
+        <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M3 3l8 8M11 3l-8 8" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>
+      </button>
+    </div>
+
+    <!-- PROGRESS -->
+    <div class="panel" id="panel-progress">
+      <div class="panel-head">
+        <span class="title">Progress</span>
+        <span class="ph-right">
+          <span class="progress-counter" id="progress-counter" hidden>0 / 0</span>
+          <span class="chev">▾</span>
+        </span>
+      </div>
+      <div class="panel-body" id="panel-progress-body">
+        <div class="empty-state" id="progress-empty">
+          <div class="empty-text">No tasks yet.</div>
+        </div>
+        <div id="progress-active" style="display: none;">
+          <div class="local-task-list" id="local-task-list"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- OUTPUT FOLDER -->
+    <div class="panel" id="panel-output">
+      <div class="panel-head">
+        <span class="title">Output folder</span>
+        <span class="chev">▾</span>
+      </div>
+      <div class="panel-body" id="panel-output-body">
+        <div class="empty-state" id="output-empty">
+          <div class="empty-icon">
+            <svg width="42" height="36" viewBox="0 0 42 36" fill="none">
+              <rect x="4"  y="9"  width="20" height="24" rx="2" stroke="var(--cw-border-strong)" stroke-width="1.4" fill="var(--cw-surface)"/>
+              <rect x="11" y="5"  width="20" height="24" rx="2" stroke="var(--cw-border-strong)" stroke-width="1.4" fill="var(--cw-surface)"/>
+              <rect x="18" y="1"  width="20" height="24" rx="2" stroke="var(--cw-border-strong)" stroke-width="1.4" fill="var(--cw-surface)"/>
+            </svg>
+          </div>
+          <div class="empty-title">No outputs yet</div>
+          <div class="empty-sub">Records pushed to D365 will appear here</div>
+        </div>
+        <div class="artifact-list" id="artifact-list"></div>
+      </div>
+    </div>
+
+    <!-- INPUT FOLDER (was Context) -->
+    <div class="panel" id="panel-input">
+      <div class="panel-head">
+        <span class="title">Input folder</span>
+        <span class="chev">▾</span>
+      </div>
+      <div class="panel-body" id="panel-input-body">
+        <div class="empty-state" id="input-empty">
+          <div class="empty-icon">
+            <svg width="36" height="36" viewBox="0 0 36 36" fill="none">
+              <path d="M9 4h12l6 6v18a2 2 0 0 1-2 2H9a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2z" stroke="var(--cw-border-strong)" stroke-width="1.4" fill="var(--cw-surface)"/>
+              <path d="M21 4v6h6" stroke="var(--cw-border-strong)" stroke-width="1.4" fill="none"/>
+            </svg>
+          </div>
+          <div class="empty-title">No context yet</div>
+          <div class="empty-sub">Reference files will appear here</div>
+        </div>
+        <div class="context-list" id="context-list"></div>
+      </div>
+    </div>
+
+    <!-- SKILLS (new) -->
+    <div class="panel" id="panel-skills">
+      <div class="panel-head">
+        <span class="title">Skills</span>
+        <span class="chev">▾</span>
+      </div>
+      <div class="panel-body" id="panel-skills-body">
+        <div class="empty-state" id="skills-empty">
+          <div class="empty-icon">
+            <svg width="32" height="36" viewBox="0 0 32 36" fill="none">
+              <path d="M16 3a10 10 0 0 0-6 18v3a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2v-3A10 10 0 0 0 16 3z" stroke="var(--cw-border-strong)" stroke-width="1.4" fill="var(--cw-surface)"/>
+              <line x1="13" y1="30" x2="19" y2="30" stroke="var(--cw-border-strong)" stroke-width="1.4" stroke-linecap="round"/>
+              <line x1="14" y1="33" x2="18" y2="33" stroke="var(--cw-border-strong)" stroke-width="1.4" stroke-linecap="round"/>
+            </svg>
+          </div>
+          <div class="empty-title">No skills yet</div>
+          <div class="empty-sub">Acquired skills will appear here</div>
+        </div>
+        <div class="skills-list" id="skills-list"></div>
+      </div>
+    </div>
+  </aside>
+</div>
+
+<button id="show-rail" type="button" class="show-rail-pill">▸ Show rail</button>
+
+<script src="/cowork/cowork-script.js"></script>
+
+<!-- Mia bridge: back-link + decision-complete handshake with the Mia Console -->
+<script>
+(function () {
+  var MIA_FLAG = 'mia-license-plate-decision';
+  var COWORK_ACTIVE = 'mia-cowork-active';
+
+  // 1. If we arrived from Mia, remember it so we can write back the decision.
+  //    (Note: we intentionally DO NOT strip the from=mia query param here —
+  //    cowork-script.js's boot() also reads it to auto-trigger the warehouse
+  //    flow, and runs after this bridge.)
+  try {
+    var qs = new URLSearchParams(location.search);
+    if (qs.get('from') === 'mia') {
+      localStorage.setItem(COWORK_ACTIVE, 'true');
+    }
+    // 2. If cowork's own "completed=cutover" return is in flight, that's the
+    //    canonical "decision recorded" signal — write the Mia flag now.
+    if (qs.get('completed') === 'cutover') {
+      localStorage.setItem(MIA_FLAG, 'complete');
+    }
+  } catch (e) { /* localStorage / URL unavailable — ignore */ }
+
+  // 3. Inject a top-left "Back to Mia Console" pill (always visible).
+  function injectBackPill() {
+    if (document.getElementById('mia-back-pill')) return;
+    var pill = document.createElement('a');
+    pill.id = 'mia-back-pill';
+    pill.href = '/#/dashboard?fromCowork=1';
+    pill.textContent = '← Back to Mia Console';
+    pill.style.cssText =
+      'position:fixed;top:14px;left:14px;z-index:9999;' +
+      'background:#1c1c1e;color:#fff;text-decoration:none;' +
+      'padding:8px 14px;border-radius:999px;' +
+      "font-family:'Segoe UI Variable','Segoe UI',system-ui,sans-serif;" +
+      'font-size:12.5px;font-weight:500;letter-spacing:0.01em;' +
+      'box-shadow:0 6px 20px rgba(0,0,0,0.18);' +
+      'display:inline-flex;align-items:center;gap:6px;';
+    pill.addEventListener('click', function () {
+      // If the user already executed the warehouse plan in cowork, propagate
+      // the "decision complete" signal so Mia closes out the awaiting task.
+      try {
+        var s = JSON.parse(localStorage.getItem('cowork-state') || 'null');
+        var done = s && s.progress && s.progress.current >= 4;
+        if (done || localStorage.getItem(COWORK_ACTIVE) === 'true') {
+          localStorage.setItem(MIA_FLAG, 'complete');
+        }
+      } catch (e) { /* ignore */ }
+    });
+    document.body.appendChild(pill);
+  }
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', injectBackPill);
+  } else {
+    injectBackPill();
+  }
+})();
+</script>
+</body>
+</html>
