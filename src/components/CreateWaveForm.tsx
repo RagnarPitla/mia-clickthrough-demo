@@ -5,11 +5,23 @@ interface CreateWaveFormProps {
   phases: Phase[];
   onSubmit: (data: { name: string; phaseId: string; description: string }) => Promise<void>;
   onCancel: () => void;
+  defaultPhaseId?: string;
+  namePlaceholder?: string;
+  title?: string;
+  submitLabel?: string;
 }
 
-export default function CreateWaveForm({ phases, onSubmit, onCancel }: CreateWaveFormProps) {
+export default function CreateWaveForm({
+  phases,
+  onSubmit,
+  onCancel,
+  defaultPhaseId = '',
+  namePlaceholder = 'Wave name...',
+  title = 'New Wave',
+  submitLabel = 'Create',
+}: CreateWaveFormProps) {
   const [name, setName] = useState('');
-  const [phaseId, setPhaseId] = useState('');
+  const [phaseId, setPhaseId] = useState(defaultPhaseId);
   const [description, setDescription] = useState('');
   const [creating, setCreating] = useState(false);
 
@@ -48,14 +60,14 @@ export default function CreateWaveForm({ phases, onSubmit, onCancel }: CreateWav
         gap: 8,
       }}
     >
-      <div style={{ fontSize: 13, fontWeight: 700, color: '#007AFF' }}>New Wave</div>
+      <div style={{ fontSize: 13, fontWeight: 700, color: '#007AFF' }}>{title}</div>
 
       <input
         data-testid="input-wave-name"
         type="text"
         value={name}
         onChange={e => setName(e.target.value)}
-        placeholder="Wave name..."
+        placeholder={namePlaceholder}
         required
         style={inputStyle}
       />
@@ -114,7 +126,7 @@ export default function CreateWaveForm({ phases, onSubmit, onCancel }: CreateWav
             opacity: creating ? 0.7 : 1,
           }}
         >
-          {creating ? 'Creating...' : 'Create'}
+          {creating ? 'Creating...' : submitLabel}
         </button>
       </div>
     </form>

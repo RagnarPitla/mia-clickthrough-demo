@@ -7,7 +7,7 @@ Live site: <https://blue-wave-088081810.7.azurestaticapps.net/?demo=true>
 ## What this repo contains
 
 - **Main Mia home page** with Dynamics 365 Finance and Supply Chain cards.
-- **Finance path** that opens the Mia dashboard with every wave released and no human-intervention item.
+- **Finance path** that opens the Mia dashboard with every wave released, no human-intervention item, and an **Add Wave** popup for adding an Atlanta DC SCM follow-on wave.
 - **Supply Chain path** that opens the Mia dashboard focused on Inventory to Deliver with one assigned human-intervention item.
 - **SCM decision app** under `/SCM/decision` for the DC-Atlanta warehouse approval click-through.
 - **Static Web Apps route config** in `public/staticwebapp.config.json`.

@@ -11,6 +11,8 @@ Main home page
   |     -> Mia dashboard
   |     -> all waves released
   |     -> no human-intervention item
+  |     -> Add Wave popup appears
+  |     -> "Implement SCM" creates an Atlanta DC warehouse wave
   |
   |-- Dynamics 365 Supply Chain
         -> Mia dashboard at /SCM?...#/dashboard
@@ -42,6 +44,7 @@ The demo is driven by localStorage so it can run as a plain static site.
 | `kazuki-project` | Selects the seeded Mia project |
 | `kazuki-wave` | Selects the current wave, usually `mia-wave-inventory-to-deliver` for SCM |
 | `mia-playback-step` | Stores released waves as comma-delimited indexes, for example `0,1,2,...` |
+| `mia-finance-scm-wave` | Stores the Finance-added SCM follow-on wave |
 | `mia-scm-pending-intervention` | Marks the SCM path as having one pending human decision |
 | `mia-license-plate-decision` | Set to `complete` when the decision is resolved |
 
@@ -53,9 +56,24 @@ When the user clicks **Dynamics 365 Finance** on the home page:
 2. It stores all wave indexes in `mia-playback-step`.
 3. It sets `mia-license-plate-decision` to `complete`.
 4. It clears `mia-scm-pending-intervention`.
-5. It navigates to `#/dashboard`.
+5. It clears any prior Finance-added SCM follow-on wave.
+6. It navigates to `#/dashboard`.
 
 Result: the dashboard appears fully released and clean, with no pending intervention callout.
+
+After the Finance dashboard is fully released, the wave sidebar shows **+ Add Wave**. Clicking it opens a popup. If the user enters:
+
+```text
+Implement SCM
+```
+
+the app stores a new Finance-added wave in `mia-finance-scm-wave` and adds:
+
+- wave: `6.1 Implement SCM - Atlanta DC Warehouse`;
+- warehouse task: `Create Warehouse Atlanta DC (ATL-01)`;
+- related setup tasks for zones, bin locations, location profiles, and docks.
+
+This is intentionally Finance-only: the Add Wave popup is hidden on `/SCM?...#/dashboard`, so the SCM demo keeps its single pending intervention behavior.
 
 ## Supply Chain behavior
 
@@ -96,7 +114,8 @@ The standalone SCM decision app then walks through the DC-Atlanta warehouse scen
 | `src/pages/WelcomePage.tsx` | Handles home-card clicks and seeds Finance vs SCM state |
 | `src/services/demoBootstrap.ts` | Enables demo mode and seeds direct SCM dashboard URLs |
 | `src/services/miaDemoData.ts` | Seeded projects, waves, tasks, localStorage keys, and pending-intervention logic |
-| `src/components/WaveSelector.tsx` | Left-rail wave cards and SCM user icon |
+| `src/components/DashboardContent.tsx` | Finance-only Add Wave state and Atlanta DC wave/task creation |
+| `src/components/WaveSelector.tsx` | Left-rail wave cards, Add Wave popup trigger, and SCM user icon |
 | `src/components/TaskNode.tsx` | Graph node rendering and intervention button |
 | `src/components/TaskList.tsx` | List view rendering and intervention button |
 | `public/SCM/index.html` | Standalone SCM decision click-through |

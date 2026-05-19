@@ -34,22 +34,99 @@ import {
   getMiaDemoWaves,
   isMiaDemoProjectId,
   MIA_DEMO_CUSTOMER_DATA,
+  MIA_DEMO_PROJECT_ID,
   MIA_DEMO_MEMBERS,
   MIA_DEMO_PROCESSES,
   MIA_DEMO_PROJECT,
   MIA_DEMO_WAVE_COUNT,
+  MIA_FINANCE_SCM_WAVE_KEY,
 } from '../services/miaDemoData';
 import {
   createWave, createTask, updateTask, createDependency,
   releaseWave, releaseAllDraftWaves, fetchSkills, completeHumanApprovalTask,
 } from '../services/dataverse';
 import type { Skill } from '../services/dataverse';
-import type { NavPage } from '../types/domain';
+import type { NavPage, Task, Wave } from '../types/domain';
 import type { AppShellOutletContext } from './AppShell';
 
 type ViewMode = 'graph' | 'list';
 
 const WAVE_KEY = 'kazuki-wave';
+const FINANCE_SCM_WAVE_ID = 'mia-wave-finance-added-scm-atlanta-dc';
+const FINANCE_SCM_PHASE_ID = 'mia-phase-implement';
+
+interface FinanceScmWaveState {
+  prompt: string;
+  status: 'Draft' | 'Completed';
+  createdAt: string;
+}
+
+function readFinanceScmWave(): FinanceScmWaveState | null {
+  try {
+    const raw = localStorage.getItem(MIA_FINANCE_SCM_WAVE_KEY);
+    if (!raw) return null;
+    const parsed = JSON.parse(raw) as Partial<FinanceScmWaveState>;
+    if (!parsed.prompt || !parsed.createdAt) return null;
+    return {
+      prompt: parsed.prompt,
+      status: parsed.status === 'Completed' ? 'Completed' : 'Draft',
+      createdAt: parsed.createdAt,
+    };
+  } catch {
+    return null;
+  }
+}
+
+function persistFinanceScmWave(value: FinanceScmWaveState) {
+  try { localStorage.setItem(MIA_FINANCE_SCM_WAVE_KEY, JSON.stringify(value)); } catch {}
+}
+
+function getFinanceScmWaveName(prompt: string) {
+  return /scm|supply chain/i.test(prompt)
+    ? '6.1 Implement SCM - Atlanta DC Warehouse'
+    : `6.1 ${prompt}`;
+}
+
+function makeFinanceScmWave(state: FinanceScmWaveState): Wave {
+  return {
+    id: FINANCE_SCM_WAVE_ID,
+    name: getFinanceScmWaveName(state.prompt),
+    description: 'Finance-requested follow-on wave to create the Atlanta DC warehouse in D365 Supply Chain.',
+    status: state.status,
+    projectId: MIA_DEMO_PROJECT_ID,
+    taskCount: 5,
+    errorCount: 0,
+    phaseId: FINANCE_SCM_PHASE_ID,
+  };
+}
+
+function makeFinanceScmTasks(state: FinanceScmWaveState): Task[] {
+  const waveName = getFinanceScmWaveName(state.prompt);
+  const taskStatus = state.status === 'Completed' ? 'Completed' : 'Pending';
+  const taskTitles = [
+    'Create Warehouse Atlanta DC (ATL-01)',
+    'Define receiving, bulk, pick, and shipping zones',
+    'Generate Atlanta DC bin locations',
+    'Apply floor, rack, and bin location profiles',
+    'Set Atlanta DC receiving and shipping docks',
+  ];
+  return taskTitles.map((title, index) => ({
+    id: `${FINANCE_SCM_WAVE_ID}-task-${index + 1}`,
+    name: `${String(index + 1).padStart(2, '0')}. ${title}`,
+    status: taskStatus,
+    skillName: index === 0 ? 'WarehousePlanner' : index === 2 ? 'LocationGridGenerator' : 'WHS-MCPData',
+    waveId: FINANCE_SCM_WAVE_ID,
+    waveName,
+    attempt: 1,
+    predecessorIds: index === 0 ? [] : [`${FINANCE_SCM_WAVE_ID}-task-${index}`],
+    outputSummary: `Prepared payload for ${title.toLowerCase()}.`,
+    modifiedOn: state.createdAt,
+    description: `Demo task for the Finance-added SCM wave: ${title}.`,
+    type: 'Configuration',
+    assigneeKind: 'Worker',
+    completedAt: state.status === 'Completed' ? state.createdAt : undefined,
+  }));
+}
 
 function getStoredWaveId(): string | null {
   try { return localStorage.getItem(WAVE_KEY); } catch { return null; }
@@ -74,13 +151,23 @@ export default function DashboardContent() {
   /* ── Project data ── */
   const { projects, activeProjectId, selectProject } = useProjects();
   const isMiaDemoProject = isMiaDemoProjectId(activeProjectId);
+  const isScmDashboardRoute = typeof window !== 'undefined' && window.location.pathname.startsWith('/SCM');
+  const [financeScmWave, setFinanceScmWave] = useState<FinanceScmWaveState | null>(readFinanceScmWave);
   const dataProjectId = isMiaDemoProject ? null : activeProjectId;
   const demoPlayback = useMiaDemoPlayback(isMiaDemoProject);
   const activeProject = isMiaDemoProject ? MIA_DEMO_PROJECT : projects.find(p => p.id === activeProjectId) ?? null;
 
   /* ── Waves ── */
   const { waves: liveWaves, refreshWaves } = useWaves(dataProjectId);
-  const waves = isMiaDemoProject ? getMiaDemoWaves(demoPlayback.released, demoPlayback.runningIndex) : liveWaves;
+  const financeScmWaveRecord = isMiaDemoProject && !isScmDashboardRoute && financeScmWave
+    ? makeFinanceScmWave(financeScmWave)
+    : null;
+  const waves = isMiaDemoProject
+    ? [
+        ...getMiaDemoWaves(demoPlayback.released, demoPlayback.runningIndex),
+        ...(financeScmWaveRecord ? [financeScmWaveRecord] : []),
+      ]
+    : liveWaves;
 
   // Auto-select first wave — runs exactly once when waves first populate
   const didAutoSelect = useRef(false);
@@ -128,7 +215,10 @@ export default function DashboardContent() {
   /* ── Tasks ── */
   const { tasks: liveWaveTasks, loading: liveTasksLoading, refresh: refreshTasks } = useTasks(isMiaDemoProject ? null : selectedWaveId);
   const { tasks: liveProjectTasks, loading: liveProjectTasksLoading, refresh: refreshProjectTasks } = useProjectTasks(dataProjectId);
-  const projectTasks = isMiaDemoProject ? getMiaDemoTasks(demoPlayback.released) : liveProjectTasks;
+  const financeScmTasks = isMiaDemoProject && financeScmWaveRecord && financeScmWave
+    ? makeFinanceScmTasks(financeScmWave)
+    : [];
+  const projectTasks = isMiaDemoProject ? [...getMiaDemoTasks(demoPlayback.released), ...financeScmTasks] : liveProjectTasks;
   const waveTasks = isMiaDemoProject
     ? projectTasks.filter(task => task.waveId === selectedWaveId)
     : liveWaveTasks;
@@ -188,6 +278,22 @@ export default function DashboardContent() {
     refreshWaves();
   }, [activeProjectId, isMiaDemoProject, selectWave, refreshWaves]);
 
+  const handleCreateFinanceScmWave = useCallback(async (data: { name: string; phaseId: string; description: string }) => {
+    const prompt = data.name.trim() || 'Implement SCM';
+    const next: FinanceScmWaveState = {
+      prompt,
+      status: 'Draft',
+      createdAt: new Date().toISOString(),
+    };
+    persistFinanceScmWave(next);
+    setFinanceScmWave(next);
+    setWaveStatusFilter('all');
+    setWavePhaseFilter('all');
+    setNavPage('waves');
+    setSelectedTaskId(`${FINANCE_SCM_WAVE_ID}-task-1`);
+    selectWave(FINANCE_SCM_WAVE_ID);
+  }, [selectWave]);
+
   const handleReleaseWave = useCallback(async (waveId: string) => {
     setReleaseConfirm(waveId);
   }, []);
@@ -200,6 +306,10 @@ export default function DashboardContent() {
   }, [isMiaDemoProject, releaseConfirm, refreshWaves]);
 
   const draftWaveCount = waves.filter(w => w.status === 'Draft' && w.taskCount > 0).length;
+  const canAddFinanceScmWave = isMiaDemoProject
+    && demoPlayback.complete
+    && !isScmDashboardRoute
+    && !financeScmWaveRecord;
 
   const confirmReleaseAll = useCallback(async () => {
     if (!activeProjectId || isMiaDemoProject) return;
@@ -319,10 +429,16 @@ export default function DashboardContent() {
               activeWaveId={selectedWaveId}
               onSelectWave={selectWave}
               phases={phases}
-              onCreateWave={isMiaDemoProject ? undefined : handleCreateWave}
+              onCreateWave={isMiaDemoProject ? (canAddFinanceScmWave ? handleCreateFinanceScmWave : undefined) : handleCreateWave}
               onReleaseWave={
                 isMiaDemoProject
                   ? (waveId: string) => {
+                      if (waveId === FINANCE_SCM_WAVE_ID && financeScmWave) {
+                        const next = { ...financeScmWave, status: 'Completed' as const };
+                        persistFinanceScmWave(next);
+                        setFinanceScmWave(next);
+                        return;
+                      }
                       const idx = waves.findIndex(w => w.id === waveId);
                       if (idx >= 0) demoPlayback.releaseWaveAt(idx);
                     }
@@ -348,6 +464,10 @@ export default function DashboardContent() {
               demoComplete={demoPlayback.complete}
               releaseOnCardClick={isMiaDemoProject}
               showAutopilotToggle={isMiaDemoProject}
+              createWaveDefaultPhaseId={FINANCE_SCM_PHASE_ID}
+              createWaveNamePlaceholder="Implement SCM"
+              createWaveTitle="Add Wave"
+              createWaveSubmitLabel="Create Atlanta DC wave"
             />
           </aside>
         )}

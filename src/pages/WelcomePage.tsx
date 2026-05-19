@@ -11,6 +11,7 @@ import {
   MIA_DEMO_PLAYBACK_KEY,
   MIA_DEMO_PROJECT_ID,
   MIA_DEMO_WAVE_COUNT,
+  MIA_FINANCE_SCM_WAVE_KEY,
   MIA_SCM_PENDING_KEY,
   MIA_SBD_PLAYBOOK,
 } from '../services/miaDemoData';
@@ -39,6 +40,7 @@ export default function WelcomePage({ onClose, onSelectPlaybook }: WelcomePagePr
     try {
       localStorage.setItem('kazuki-project', MIA_DEMO_PROJECT_ID);
       localStorage.removeItem('kazuki-wave');
+      localStorage.removeItem(MIA_FINANCE_SCM_WAVE_KEY);
       localStorage.setItem(MIA_COWORK_DECISION_KEY, 'complete');
       localStorage.removeItem(MIA_SCM_PENDING_KEY);
       localStorage.setItem(

@@ -1,4 +1,4 @@
-import { render, screen, fireEvent } from '@testing-library/react';
+import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { describe, it, expect, vi } from 'vitest';
 import WaveSelector from './WaveSelector';
 import type { Wave } from '../types/domain';
@@ -68,5 +68,32 @@ describe('WaveSelector', () => {
     );
     fireEvent.click(screen.getByTestId('wave-release-all-btn'));
     expect(onReleaseAll).toHaveBeenCalled();
+  });
+
+  it('opens the Add Wave popup and submits the entered wave name', async () => {
+    const onCreateWave = vi.fn().mockResolvedValue(undefined);
+    render(
+      <WaveSelector
+        waves={[makeWave({ id: 'w1' })]}
+        activeWaveId={null}
+        onSelectWave={vi.fn()}
+        phases={[{ id: 'p1', name: 'Implement', description: '', order: 1, status: 'Active', projectId: 'p1' }]}
+        onCreateWave={onCreateWave}
+        createWaveDefaultPhaseId="p1"
+        createWaveNamePlaceholder="Implement SCM"
+      />,
+    );
+
+    fireEvent.click(screen.getByTestId('wave-add-btn'));
+    expect(screen.getByTestId('create-wave-dialog')).toBeInTheDocument();
+
+    fireEvent.change(screen.getByTestId('input-wave-name'), { target: { value: 'Implement SCM' } });
+    fireEvent.click(screen.getByTestId('btn-create-wave'));
+
+    await waitFor(() => expect(onCreateWave).toHaveBeenCalledWith({
+      name: 'Implement SCM',
+      phaseId: 'p1',
+      description: '',
+    }));
   });
 });

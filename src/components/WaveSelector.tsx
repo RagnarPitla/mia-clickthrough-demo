@@ -151,6 +151,10 @@ interface WaveSelectorProps {
   releaseOnCardClick?: boolean;
   // When true, render the Manual / Autopilot toggle (narrative-only).
   showAutopilotToggle?: boolean;
+  createWaveDefaultPhaseId?: string;
+  createWaveNamePlaceholder?: string;
+  createWaveTitle?: string;
+  createWaveSubmitLabel?: string;
 }
 
 export default function WaveSelector({
@@ -171,6 +175,10 @@ export default function WaveSelector({
   demoComplete = false,
   releaseOnCardClick = false,
   showAutopilotToggle = false,
+  createWaveDefaultPhaseId,
+  createWaveNamePlaceholder,
+  createWaveTitle,
+  createWaveSubmitLabel,
 }: WaveSelectorProps) {
   const [showCreate, setShowCreate] = useState(false);
   const [autopilot, setAutopilot] = useState<'manual' | 'autopilot'>('manual');
@@ -268,15 +276,17 @@ export default function WaveSelector({
               onClick={() => setShowCreate(s => !s)}
               title="Create new wave"
               style={{
-                width: 24, height: 24, borderRadius: 7,
+                height: 24, borderRadius: 7,
+                padding: '0 9px',
                 display: 'flex', alignItems: 'center', justifyContent: 'center',
                 background: showCreate ? 'rgba(0,122,255,0.10)' : 'rgba(0,0,0,0.04)',
                 border: `1px solid ${showCreate ? 'rgba(0,122,255,0.20)' : 'rgba(0,0,0,0.06)'}`,
                 color: showCreate ? '#007AFF' : 'rgba(60,60,67,0.72)',
-                cursor: 'pointer', fontSize: 14, fontWeight: 700,
+                cursor: 'pointer', fontSize: 11, fontWeight: 800,
+                fontFamily: "'Plus Jakarta Sans', sans-serif",
               }}
             >
-              {showCreate ? '×' : '+'}
+              {showCreate ? '×' : '+ Add Wave'}
             </button>
           )}
         </div>
@@ -348,13 +358,37 @@ export default function WaveSelector({
         </div>
       )}
 
-      {/* Create wave form */}
+      {/* Create wave popup */}
       {showCreate && onCreateWave && (
-        <CreateWaveForm
-          phases={phases}
-          onSubmit={handleCreate}
-          onCancel={() => setShowCreate(false)}
-        />
+        <div
+          data-testid="create-wave-dialog"
+          role="dialog"
+          aria-modal="true"
+          onClick={() => setShowCreate(false)}
+          style={{
+            position: 'fixed',
+            inset: 0,
+            zIndex: 2000,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            padding: 24,
+            background: 'rgba(0,0,0,0.28)',
+            backdropFilter: 'blur(6px)',
+          }}
+        >
+          <div onClick={(e) => e.stopPropagation()} style={{ width: 'min(420px, 100%)' }}>
+            <CreateWaveForm
+              phases={phases}
+              onSubmit={handleCreate}
+              onCancel={() => setShowCreate(false)}
+              defaultPhaseId={createWaveDefaultPhaseId}
+              namePlaceholder={createWaveNamePlaceholder}
+              title={createWaveTitle}
+              submitLabel={createWaveSubmitLabel}
+            />
+          </div>
+        </div>
       )}
 
       {/* Wave list — grouped by phase when phases are available */}

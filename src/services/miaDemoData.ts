@@ -16,6 +16,7 @@ export const MIA_DEMO_PROJECT_ID = 'mia-zava-us-legal-entity';
 export const MIA_DEMO_PLAYBOOK_ID = 'mia-sbd-zava-agentic-retailer';
 export const MIA_DEMO_PLAYBOOK_NAME = 'mia-sbd-zava-agentic-retailer';
 export const MIA_DEMO_PLAYBACK_KEY = 'mia-playback-step';
+export const MIA_FINANCE_SCM_WAVE_KEY = 'mia-finance-scm-wave';
 // localStorage flag set by the Cowork app once the user has executed the
 // configuration plan there. Read by getMiaDemoTasks to resolve the
 // awaiting-user license-plate task to Completed.
