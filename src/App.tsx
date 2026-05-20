@@ -157,8 +157,23 @@ export default function App() {
           </button>
           <button
             data-testid="refresh-btn"
-            onClick={refreshTasks}
-            title="Refresh"
+            onClick={() => {
+              const inDemo = (() => {
+                try { return localStorage.getItem('kazuki-demo-mode') === 'true'; } catch { return false; }
+              })();
+              if (inDemo) {
+                try {
+                  localStorage.removeItem('mia-playback-step');
+                  localStorage.removeItem('mia-finance-scm-wave');
+                  localStorage.removeItem('mia-scm-pending-intervention');
+                  localStorage.removeItem('mia-license-plate-decision');
+                } catch {}
+                window.location.assign('/?demo=true');
+                return;
+              }
+              refreshTasks();
+            }}
+            title="Reset demo"
             style={{ width: 28, height: 28, borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 14, background: tasksLoading ? 'var(--accent-glow)' : 'rgba(0,0,0,0.04)', border: `1px solid ${tasksLoading ? 'var(--accent-border)' : 'var(--border-glass)'}`, color: tasksLoading ? 'var(--accent)' : 'var(--text-secondary)', cursor: 'pointer', animation: tasksLoading ? 'spin 0.8s linear infinite' : 'none', transition: 'background 0.2s' }}
           >
             ↻

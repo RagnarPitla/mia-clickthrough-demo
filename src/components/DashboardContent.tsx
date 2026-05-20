@@ -38,7 +38,6 @@ import {
   MIA_DEMO_MEMBERS,
   MIA_DEMO_PROCESSES,
   MIA_DEMO_PROJECT,
-  MIA_DEMO_WAVE_COUNT,
   MIA_FINANCE_SCM_WAVE_KEY,
 } from '../services/miaDemoData';
 import {
@@ -456,12 +455,6 @@ export default function DashboardContent() {
               }
               onReleaseAllWaves={isMiaDemoProject ? undefined : () => setReleaseAllConfirm(true)}
               releaseAllCount={isMiaDemoProject ? 0 : draftWaveCount}
-              onRunDemo={isMiaDemoProject ? demoPlayback.startPlayback : undefined}
-              onResetDemo={isMiaDemoProject ? demoPlayback.resetPlayback : undefined}
-              demoProgress={demoPlayback.progress}
-              demoTotal={MIA_DEMO_WAVE_COUNT}
-              demoRunning={demoPlayback.running}
-              demoComplete={demoPlayback.complete}
               releaseOnCardClick={isMiaDemoProject}
               showAutopilotToggle={isMiaDemoProject}
               createWaveDefaultPhaseId={FINANCE_SCM_PHASE_ID}

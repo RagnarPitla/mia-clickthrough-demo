@@ -141,12 +141,6 @@ interface WaveSelectorProps {
   onReleaseWavesInPhase?: (waveIds: string[]) => void;
   onReleaseAllWaves?: () => void;
   releaseAllCount?: number;
-  onRunDemo?: () => void;
-  onResetDemo?: () => void;
-  demoProgress?: number;
-  demoTotal?: number;
-  demoRunning?: boolean;
-  demoComplete?: boolean;
   // When true, clicking a Draft wave card releases just that wave (click-through demo).
   releaseOnCardClick?: boolean;
   // When true, render the Manual / Autopilot toggle (narrative-only).
@@ -167,12 +161,6 @@ export default function WaveSelector({
   onReleaseWavesInPhase,
   onReleaseAllWaves,
   releaseAllCount = 0,
-  onRunDemo,
-  onResetDemo,
-  demoProgress = 0,
-  demoTotal = 0,
-  demoRunning = false,
-  demoComplete = false,
   releaseOnCardClick = false,
   showAutopilotToggle = false,
   createWaveDefaultPhaseId,
@@ -200,56 +188,6 @@ export default function WaveSelector({
           WAVES
         </span>
         <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-          {onRunDemo && (
-            <button
-              data-testid="wave-run-demo-btn"
-              onClick={onRunDemo}
-              disabled={demoRunning}
-              title="Release all waves"
-              style={{
-                padding: '5px 11px',
-                borderRadius: 8,
-                background: demoRunning
-                  ? 'linear-gradient(135deg, rgba(234,88,12,0.55), rgba(249,115,22,0.55))'
-                  : 'linear-gradient(135deg, #EA580C 0%, #F97316 100%)',
-                border: '1px solid rgba(234,88,12,0.4)',
-                color: '#fff',
-                cursor: demoRunning ? 'default' : 'pointer',
-                fontSize: 10,
-                fontWeight: 800,
-                letterSpacing: '0.02em',
-                fontFamily: "'Plus Jakarta Sans', sans-serif",
-                boxShadow: demoRunning ? '0 0 0 3px rgba(234,88,12,0.25)' : '0 1px 2px rgba(234,88,12,0.25)',
-                transition: 'all 0.12s ease',
-              }}
-            >
-              {demoRunning
-                ? `Releasing ${demoProgress}/${demoTotal}`
-                : demoComplete
-                  ? '↻ Release again'
-                  : '⚡ Release Waves'}
-            </button>
-          )}
-          {onResetDemo && demoProgress > 0 && !demoRunning && (
-            <button
-              data-testid="wave-reset-demo-btn"
-              onClick={onResetDemo}
-              title="Reset wave playback"
-              style={{
-                padding: '4px 8px',
-                borderRadius: 7,
-                background: 'rgba(0,0,0,0.04)',
-                border: '1px solid rgba(0,0,0,0.08)',
-                color: 'rgba(60,60,67,0.72)',
-                cursor: 'pointer',
-                fontSize: 10,
-                fontWeight: 700,
-                fontFamily: "'Plus Jakarta Sans', sans-serif",
-              }}
-            >
-              Reset
-            </button>
-          )}
           {onReleaseAllWaves && releaseAllCount > 0 && (
             <button
               data-testid="wave-release-all-btn"

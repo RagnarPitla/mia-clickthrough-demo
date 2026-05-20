@@ -75,6 +75,19 @@ the app stores a new Finance-added wave in `mia-finance-scm-wave` and adds:
 
 This is intentionally Finance-only: the Add Wave popup is hidden on `/SCM?...#/dashboard`, so the SCM demo keeps its single pending intervention behavior.
 
+## Resetting the demo
+
+The WAVES rail header only shows **+ Add Wave** in demo mode. The previous "Release again" and "Reset" buttons were removed to keep the rail clean.
+
+To reset the demo to its seeded state, click the **↻** icon in the top-right of the app header. In demo mode this clears:
+
+- `mia-playback-step`
+- `mia-finance-scm-wave`
+- `mia-scm-pending-intervention`
+- `mia-license-plate-decision`
+
+…and reloads `/?demo=true`, returning the user to the Mia home page where Finance or Supply Chain can be picked again. Outside demo mode the same button keeps its original Refresh behavior.
+
 ## Supply Chain behavior
 
 When the user clicks **Dynamics 365 Supply Chain** on the home page:
